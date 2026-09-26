@@ -1,5 +1,7 @@
 # LIVCK Cloud PHP SDK
 
+![Creating a monitor with the LIVCK Cloud PHP SDK](.github/assets/header.png)
+
 The PHP client for the [LIVCK Cloud](https://livck.cloud) API: uptime monitoring, status
 pages on [statuspage.de](https://statuspage.de) or your own domain, and the incident and
 maintenance history behind them. It talks to LIVCK Cloud (`api.livck.cloud`) only; LIVCK
