@@ -56,6 +56,7 @@ interface CloudClientInterface
      * Reachable with any token; a good first call to verify a configuration.
      *
      * @throws Exceptions\ApiException
+     * @throws Exceptions\TransportException
      */
     public function me(): Me;
 
@@ -66,6 +67,7 @@ interface CloudClientInterface
      * @return list<Probe>
      *
      * @throws Exceptions\ApiException
+     * @throws Exceptions\TransportException
      */
     public function probes(): array;
 
@@ -76,6 +78,7 @@ interface CloudClientInterface
      * `services.view`.
      *
      * @throws Exceptions\ApiException
+     * @throws Exceptions\TransportException
      */
     public function checkTypes(): CheckTypeCatalog;
 

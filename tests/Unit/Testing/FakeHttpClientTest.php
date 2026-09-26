@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use GuzzleHttp\Psr7\HttpFactory;
+use LIVCK\Cloud\CloudClient;
 use LIVCK\Cloud\Support\Field;
 use LIVCK\Cloud\Support\Json;
 use LIVCK\Cloud\Testing\ExpectationFailedException;
@@ -10,6 +11,7 @@ use LIVCK\Cloud\Testing\FakeHttpClient;
 use LIVCK\Cloud\Testing\FakeNetworkException;
 use LIVCK\Cloud\Testing\MockResponse;
 use LIVCK\Cloud\Testing\RecordedRequest;
+use PHPUnit\Framework\Assert;
 use Psr\Http\Message\RequestInterface;
 
 $factory = new HttpFactory();
@@ -171,4 +173,18 @@ describe('MockResponse', function (): void {
         ])->and($mock->isNetworkError())->toBeFalse()
             ->and(MockResponse::networkError()->isNetworkError())->toBeTrue();
     });
+});
+
+it('counts a met expectation as a PHPUnit assertion', function (): void {
+    [$client, $http] = CloudClient::fake([MockResponse::noContent()]);
+    $client->request('DELETE', 'tags/abc');
+
+    $before = Assert::getCount();
+    $http->assertSent(static fn(RecordedRequest $request): bool => $request->method === 'DELETE')
+        ->assertNotSent(static fn(RecordedRequest $request): bool => $request->method === 'POST')
+        ->assertSentCount(1)
+        ->assertNoPendingResponses();
+    $after = Assert::getCount();
+
+    expect($after - $before)->toBe(4);
 });

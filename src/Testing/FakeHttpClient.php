@@ -7,6 +7,7 @@ namespace LIVCK\Cloud\Testing;
 use Closure;
 use Http\Discovery\Psr17FactoryDiscovery;
 use LogicException;
+use PHPUnit\Framework\Assert;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
@@ -154,7 +155,7 @@ final class FakeHttpClient implements ClientInterface
     {
         foreach ($this->recorded as $request) {
             if ($matcher($request)) {
-                return $this;
+                return $this->passed();
             }
         }
 
@@ -181,7 +182,7 @@ final class FakeHttpClient implements ClientInterface
             }
         }
 
-        return $this;
+        return $this->passed();
     }
 
     public function assertSentCount(int $count, string $message = ''): self
@@ -195,7 +196,7 @@ final class FakeHttpClient implements ClientInterface
             ));
         }
 
-        return $this;
+        return $this->passed();
     }
 
     public function assertNothingSent(string $message = ''): self
@@ -208,6 +209,19 @@ final class FakeHttpClient implements ClientInterface
     {
         if ($this->queue !== []) {
             throw new ExpectationFailedException($message !== '' ? $message : sprintf('%d queued response(s) were never requested.', count($this->queue)));
+        }
+
+        return $this->passed();
+    }
+
+    /**
+     * A met expectation counts as an assertion when PHPUnit runs, so a test that asserts only
+     * through this fake is not reported as risky. Outside PHPUnit it does nothing.
+     */
+    private function passed(): self
+    {
+        if (class_exists(Assert::class)) {
+            Assert::assertThat(true, Assert::isTrue());
         }
 
         return $this;
