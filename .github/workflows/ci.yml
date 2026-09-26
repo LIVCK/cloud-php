@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: PHP ${{ matrix.php }} · ${{ matrix.dependencies }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.3', '8.4']
+        dependencies: [lowest, stable]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          tools: composer:v2
+
+      - name: Install dependencies (${{ matrix.dependencies }})
+        run: |
+          if [ "${{ matrix.dependencies }}" = "lowest" ]; then
+            composer update --no-interaction --no-progress --prefer-lowest --prefer-stable
+          else
+            composer update --no-interaction --no-progress --prefer-stable
+          fi
+
+      # Style, static analysis and refactoring rules describe the code, not its
+      # compatibility, so they run once against the current tool versions.
+      - name: Code style
+        if: matrix.dependencies == 'stable'
+        run: composer lint
+
+      - name: Static analysis
+        if: matrix.dependencies == 'stable'
+        run: composer analyse
+
+      - name: Refactoring rules (dry run)
+        if: matrix.dependencies == 'stable'
+        run: composer refactor:check
+
+      - name: Tests (unit and contract suites)
+        run: composer test -- --colors=always

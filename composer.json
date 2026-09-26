@@ -1,0 +1,85 @@
+{
+    "name": "livck/cloud-php",
+    "description": "Official PHP client for the LIVCK Cloud API.",
+    "type": "library",
+    "license": "proprietary",
+    "keywords": [
+        "livck",
+        "uptime",
+        "monitoring",
+        "status page",
+        "incidents",
+        "api",
+        "sdk",
+        "client"
+    ],
+    "homepage": "https://livck.cloud",
+    "support": {
+        "docs": "https://docs.livck.cloud",
+        "issues": "https://github.com/LIVCK/cloud-php/issues",
+        "source": "https://github.com/LIVCK/cloud-php"
+    },
+    "require": {
+        "php": "^8.3",
+        "php-http/discovery": "^1.19",
+        "php-http/multipart-stream-builder": "^1.3",
+        "psr/http-client": "^1.0",
+        "psr/http-client-implementation": "^1.0",
+        "psr/http-factory": "^1.1",
+        "psr/http-factory-implementation": "^1.0",
+        "psr/http-message": "^1.1 || ^2.0",
+        "psr/log": "^2.0 || ^3.0"
+    },
+    "require-dev": {
+        "guzzlehttp/guzzle": "^7.9",
+        "laravel/pint": "^1.32",
+        "opis/json-schema": "^2.6",
+        "pestphp/pest": "^4.0",
+        "phpstan/phpstan": "^2.2",
+        "phpstan/phpstan-strict-rules": "^2.0.12",
+        "rector/rector": "^2.6"
+    },
+    "suggest": {
+        "guzzlehttp/guzzle": "Ready-made PSR-18 client and PSR-17 factories. The SDK configures it (timeouts, no redirects) when no client is passed in."
+    },
+    "autoload": {
+        "psr-4": {
+            "LIVCK\\Cloud\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "LIVCK\\Cloud\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "optimize-autoloader": true,
+        "platform": {
+            "php": "8.3.0"
+        },
+        "allow-plugins": {
+            "php-http/discovery": true,
+            "pestphp/pest-plugin": true
+        }
+    },
+    "scripts": {
+        "test": "pest",
+        "test:contract": "pest --testsuite=Contract",
+        "test:integration": "pest --testsuite=Integration",
+        "spec:update": "@php tools/update-openapi.php",
+        "lint": "pint --test",
+        "lint:fix": "pint",
+        "analyse": "phpstan analyse --memory-limit=1G",
+        "refactor": "rector process",
+        "refactor:check": "rector process --dry-run",
+        "ci": [
+            "@lint",
+            "@analyse",
+            "@refactor:check",
+            "@test"
+        ]
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
