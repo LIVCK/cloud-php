@@ -8,12 +8,13 @@ use LIVCK\Cloud\Data\Tag;
 use LIVCK\Cloud\Exceptions\InvalidArgumentException;
 
 /**
- * Tag ids for a service's `tags` list, from Tag DTOs or plain ids.
+ * Tag ids for the fields that name one existing tag by id (a synced group's `sync_tag_id`), from
+ * Tag DTOs or plain ids.
  *
- * The services API takes tag IDS only, never labels: a label that does not exist would
- * otherwise silently create a junk tag. A string that is not shaped like an id (21 URL-safe
- * characters) is refused here, so `customer:4711` fails at once instead of as a 422 later;
- * resolve labels with `tags()->findByLabel()` or `tags()->ensure()` first.
+ * Such a field takes an id only, never a name. A string that is not shaped like an id (21
+ * URL-safe characters) is refused here, so `customer:4711` fails at once instead of as a 422
+ * later; resolve names with `tags()->findByLabel()` or `tags()->ensure()` first. A service's
+ * `tags` list takes names as well and goes through {@see TagEntries}.
  */
 final class TagIds
 {

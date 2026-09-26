@@ -44,8 +44,9 @@ $client = client('01-onboard-customer');
 try {
     echo 'Customer ', $customer, PHP_EOL;
 
-    // Find or create: the tag exists afterwards either way, even when two runs race, so this
-    // call needs no stable Idempotency-Key of its own.
+    // The synced group below names the tag by id, so fetch the tag itself (services alone would
+    // take its name, `customer:4711`). Find or create: the tag exists afterwards either way, even
+    // when two runs race, so this call needs no stable Idempotency-Key of its own.
     $ensured = $client->tags()->ensure(CUSTOMER_TAG_KEY, $customer);
     $tag = $ensured->tag;
     report($ensured->created, 'tag', $tag->label);

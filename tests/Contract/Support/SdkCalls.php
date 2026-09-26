@@ -340,6 +340,9 @@ final class SdkCalls
             ),
             $create(ServiceBuilder::ssl('ssl-defaults', 'example.com')),
             $create(ServiceBuilder::manual('manual')->tags(self::TAG_ID)),
+            $create(ServiceBuilder::manual('manual-tag-names')->tags('ecommerce', 'customer:4711', 'env=prod')),
+            $create(ServiceBuilder::manual('manual-tags-mixed')->tags(self::TAG_ID, Tag::fromArray(tagPayload(['id' => 'W2TuHYS9a6keIj7CnzU12'])), 'customer:4711')),
+            $create(self::readmeHeaderBuilder()),
             new SdkCall('services.create.withKey', [$created], static fn(CloudClient $client): mixed => $client->services()->create(
                 ServiceBuilder::http('http-with-key', 'https://shop.example.com/health'),
                 $catalog,
@@ -385,6 +388,8 @@ final class SdkCalls
                 ->withHeader('X-Trace', 'sdk')
                 ->withoutHeader('X-Removed')),
             $update('name', UpdateService::make()->withName('Shop')),
+            $update('tagNames', UpdateService::make()->withTags('customer:4711', 'env=prod', 'critical')),
+            $update('tagsMixed', UpdateService::make()->withTags(self::TAG_ID, 'customer:4711')),
             $update('dropTagsAndRoles', UpdateService::make()->withoutTags()->withoutProbeRoles()),
             $update('dns', UpdateService::make()->withDnsRecordType(DnsRecordType::Aaaa)->withDefaultConditions()),
             $update('bearer', UpdateService::make()->withAuth(HttpAuth::bearer('new-token'))->withHeaders([])),
@@ -620,6 +625,21 @@ final class SdkCalls
                 $client->statuspages()->customDomains(self::PAGE_ID)->detach($domainId);
             }),
         ];
+    }
+
+    /** The monitor the README header shows, tag names included. */
+    private static function readmeHeaderBuilder(): HttpServiceBuilder
+    {
+        return ServiceBuilder::http('Checkout', 'https://shop.example.com/health')
+            ->interval(30)
+            ->probes('ffm', 'hel', 'nyc', 'cgn')
+            ->header('X-Api-Key', 'my-shop-api-key')
+            ->tags('ecommerce', 'checkout', 'customer:shop-123')
+            ->condition(
+                HttpCondition::statusCode()->gte(500)->down(),
+                HttpCondition::json('status')->neq('ok')->degraded(),
+                HttpCondition::responseTimeMs()->gt(2000)->degraded(),
+            );
     }
 
     /** An HTTP check with every typed option and condition family set. */

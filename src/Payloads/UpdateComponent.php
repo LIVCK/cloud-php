@@ -130,7 +130,10 @@ final readonly class UpdateComponent
      * the previous tag had added and the new one does not cover are deleted, and children you
      * added by hand whose service carries the tag are taken over.
      *
-     * @param Tag|string $tag the tag or its id; a label such as `customer:4711` is refused
+     * The group names one EXISTING tag by id (`sync_tag_id`): a name such as `customer:4711` is
+     * refused before anything is sent. `tags()->ensure()` hands you the tag, created or found.
+     *
+     * @param Tag|string $tag the tag or its id, never its name
      */
     public function withSyncTag(Tag|string $tag): self
     {

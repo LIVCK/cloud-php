@@ -53,8 +53,11 @@ final readonly class ComponentBuilder
      * up to date. The tag must be one you created (the server agent's system tags are
      * refused), and a synced group needs a spare nesting level below it.
      *
-     * @param Tag|string $tag the tag or its id; a label such as `customer:4711` is refused, resolve
-     *                        it with `tags()->findByLabel()` or `tags()->ensure()` first
+     * The group names one EXISTING tag by id (`sync_tag_id`), so unlike
+     * {@see ServiceBuilder::tags()} this takes no names: a name such as `customer:4711` is
+     * refused before anything is sent. `tags()->ensure()` hands you the tag, created or found.
+     *
+     * @param Tag|string $tag the tag or its id, never its name
      */
     public static function syncedGroup(Translatable|string $name, Tag|string $tag): self
     {

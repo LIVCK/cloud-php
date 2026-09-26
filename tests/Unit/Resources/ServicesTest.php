@@ -320,6 +320,30 @@ describe('create', function (): void {
         }
     });
 
+    it('sends tag names as given and surfaces a refused entry on its own key', function (): void {
+        $message = 'There is no tag with the id or name "V1StGXR8Z5jdHi6BmyT0x".';
+        [$client, $http] = singleShotClient([MockResponse::error($message, 422, ['tags.1' => [$message]])]);
+
+        try {
+            $client->services()->create(ServiceBuilder::manual('Phone')->tags('customer:4711', 'V1StGXR8Z5jdHi6BmyT0x'));
+            expect(false)->toBeTrue('a ValidationException was expected');
+        } catch (ValidationException $e) {
+            expect($e->hasError('tags.1'))->toBeTrue()
+                ->and($e->hasError('tags.0'))->toBeFalse()
+                ->and($e->firstError('tags.1'))->toBe($message);
+        }
+
+        expect($http->lastRequest()?->json())->toBe(['name' => 'Phone', 'check_type' => 'manual', 'tags' => ['customer:4711', 'V1StGXR8Z5jdHi6BmyT0x']]);
+    });
+
+    it('refuses a blank tag before anything is sent', function (): void {
+        [$client, $http] = fakeClient();
+
+        expect(fn(): Service => $client->services()->create(ServiceBuilder::manual('Phone')->tags('customer:4711', ' ')))
+            ->toThrow(InvalidArgumentException::class, 'tag must not be blank');
+        $http->assertNothingSent();
+    });
+
     it('sends the given idempotency key instead of a generated one', function (): void {
         [$client, $http] = fakeClient([MockResponse::json(['data' => ServiceFixtures::payload()], 201)]);
 
@@ -355,6 +379,16 @@ describe('update', function (): void {
         $http->assertSent(fn(RecordedRequest $r): bool => $r->matches('PATCH', '/v1/services/' . ServiceFixtures::ID)
             && $r->json() === ['name' => 'Renamed', 'settings' => ['retries' => 4]]
             && ! $r->hasHeader('Idempotency-Key'));
+    });
+
+    it('replaces the tags with a mix of ids and names', function (): void {
+        [$client, $http] = fakeClient([MockResponse::json(['data' => ServiceFixtures::payload()])]);
+
+        $service = $client->services()->update(ServiceFixtures::ID, UpdateService::make()->withTags(ServiceFixtures::TAG_ID, 'customer:4712', 'env=prod'));
+
+        expect($service->id)->toBe(ServiceFixtures::ID)
+            ->and($http->lastRequest()?->json())->toBe(['tags' => [ServiceFixtures::TAG_ID, 'customer:4712', 'env=prod']]);
+        $http->assertSent(fn(RecordedRequest $r): bool => $r->matches('PATCH', '/v1/services/' . ServiceFixtures::ID));
     });
 
     it('refuses an empty update before anything is sent', function (): void {

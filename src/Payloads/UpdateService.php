@@ -7,6 +7,7 @@ namespace LIVCK\Cloud\Payloads;
 use BackedEnum;
 use LIVCK\Cloud\Builders\Conditions\Condition;
 use LIVCK\Cloud\Builders\HttpAuth;
+use LIVCK\Cloud\Builders\ServiceBuilder;
 use LIVCK\Cloud\Data\Service;
 use LIVCK\Cloud\Data\ServiceSettings;
 use LIVCK\Cloud\Data\Tag;
@@ -18,7 +19,7 @@ use LIVCK\Cloud\Enums\ProbeRole;
 use LIVCK\Cloud\Exceptions\InvalidArgumentException;
 use LIVCK\Cloud\Support\JsonObject;
 use LIVCK\Cloud\Support\KeepSecret;
-use LIVCK\Cloud\Support\TagIds;
+use LIVCK\Cloud\Support\TagEntries;
 
 /**
  * A partial update for `PATCH /v1/services/{id}`: only what was set is sent.
@@ -119,12 +120,16 @@ final readonly class UpdateService
     }
 
     /**
-     * The service's tags after the update, by id or Tag DTO: the WHOLE set, not an
-     * addition. The API takes tag ids only, never labels.
+     * The service's tags after the update: the WHOLE set, not an addition. Tag objects, tag ids
+     * or tag names, in any mix, as in {@see ServiceBuilder::tags()}: a name that does not exist
+     * yet is created, an entry that looks like a tag id must name an existing tag. Tags the server
+     * agent maintains stay on the service either way.
+     *
+     * @throws InvalidArgumentException for a blank entry, before anything is sent
      */
     public function withTags(Tag|string ...$tags): self
     {
-        return $this->withAttribute('tags', TagIds::of(...$tags));
+        return $this->withAttribute('tags', TagEntries::of(...$tags));
     }
 
     /** Remove every tag (except those a server agent maintains). */

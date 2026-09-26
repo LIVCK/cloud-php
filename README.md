@@ -55,7 +55,8 @@ a tag. Give every customer exactly one, `customer:<number>`, and the rest follow
 `ServiceQuery::make()->withTag('customer:4711')` lists exactly that customer's services, a
 synced group fills the customer's status page from it, and incidents and maintenance are
 filtered through the customer's service ids. The plan caps the number of tags; reaching the
-cap is a `ValidationException` on `tags`.
+cap is a `ValidationException` on `tags`, or on the entry (`tags.2`) of a service's tag list
+that would create one more.
 
 The examples put this together. They read `LIVCK_CLOUD_TOKEN` (and `LIVCK_CLOUD_BASE_URI`
 if set), and the ones that write can safely run again:
@@ -89,7 +90,7 @@ $service = $client->services()->create(
         ->interval(30)
         ->probes('ffm', 'hel')
         ->header('X-Api-Key', $apiKey)
-        ->tags($tag)
+        ->tags($tag, 'checkout', 'env=prod')
         ->condition(
             HttpCondition::statusCode()->gte(500)->down(),
             HttpCondition::json('status')->neq('ok')->degraded(),
@@ -98,6 +99,13 @@ $service = $client->services()->create(
     $catalog, // optional: validate against it before anything is sent
 );
 ```
+
+`tags()` takes Tag objects, tag ids and tag names (`critical`, `customer:4711`, `env=prod`) in
+any mix, and a name that does not exist yet is created with the service. The one exception is an
+entry that looks like a tag id (21 letters, digits, `_` or `-`, with at least one uppercase
+letter): it must be an existing tag's id or name, otherwise the server answers with a
+`ValidationException` on that entry (`tags.2`). Tag keys are always lowercase, so names are never
+affected.
 
 With a catalog, config keys, options, condition fields, operators and the type's interval
 range are checked before sending, and every problem is listed in one
@@ -121,8 +129,8 @@ $client->services()->update($id, UpdateService::basedOn($service)
     ->withHeader('X-Api-Key', $newKey) // the other headers stay as stored
     ->withIntervalSeconds(60));
 
-// Tags are replaced as a whole: send the full set.
-$tags = [...$service->tagIds(), $secondCustomerTag->id];
+// Tags are replaced as a whole: send the full set, by id or by name.
+$tags = [...$service->tagIds(), 'customer:4712'];
 $client->services()->update($id, UpdateService::make()->withTags(...$tags));
 ```
 

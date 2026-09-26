@@ -19,7 +19,7 @@ use LIVCK\Cloud\Enums\DnsRecordType;
 use LIVCK\Cloud\Exceptions\CatalogValidationException;
 use LIVCK\Cloud\Exceptions\InvalidArgumentException;
 use LIVCK\Cloud\Support\JsonObject;
-use LIVCK\Cloud\Support\TagIds;
+use LIVCK\Cloud\Support\TagEntries;
 
 /**
  * The body of `POST /v1/services`, built per check type so that only what the type
@@ -133,13 +133,18 @@ abstract class ServiceBuilder
     }
 
     /**
-     * The tags to attach, by id or Tag DTO. The API takes tag IDS only: a label such as
-     * `customer:4711` is refused here, resolve it with `tags()->ensure()` first.
+     * The tags to attach: Tag objects, tag ids or tag names (`critical`, `customer:4711`,
+     * `env=prod`), in any mix. A name that does not exist yet is created with the service. An
+     * entry that looks like a tag id (21 letters, digits, `_` or `-`, with at least one uppercase
+     * letter) is never created: it must be an existing tag's id or name, otherwise the server
+     * answers with a `ValidationException` on that entry (`tags.2`).
+     *
+     * @throws InvalidArgumentException for a blank entry, before anything is sent
      */
     public function tags(Tag|string ...$tags): static
     {
         $copy = clone $this;
-        $copy->tags = TagIds::of(...$tags);
+        $copy->tags = TagEntries::of(...$tags);
 
         return $copy;
     }

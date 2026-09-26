@@ -32,12 +32,13 @@ it('sends a partial settings block without an interval, as the server merges per
     expect(Json::encode(UpdateService::make()->withMethod(HttpMethod::Head)->toArray()))->toBe('{"settings":{"config":{"method":"HEAD"}}}');
 });
 
-it('replaces the tag set as a whole and can clear it', function (): void {
+it('replaces the tag set as a whole, by Tag, id or name, and can clear it', function (): void {
     $tag = Tag::fromArray(tagPayload());
 
-    expect(UpdateService::make()->withTags($tag, 'b' . str_repeat('1', 20))->toArray())->toBe(['tags' => [$tag->id, 'b' . str_repeat('1', 20)]])
+    expect(UpdateService::make()->withTags($tag, 'b' . str_repeat('1', 20), ' customer:4711 ', 'env=prod')->toArray())
+        ->toBe(['tags' => [$tag->id, 'b' . str_repeat('1', 20), 'customer:4711', 'env=prod']])
         ->and(UpdateService::make()->withoutTags()->toArray())->toBe(['tags' => []])
-        ->and(fn(): UpdateService => UpdateService::make()->withTags('kunde:4711'))->toThrow(InvalidArgumentException::class, 'not a tag id');
+        ->and(fn(): UpdateService => UpdateService::make()->withTags('customer:4711', ''))->toThrow(InvalidArgumentException::class, 'tag must not be blank');
 });
 
 it('sends role maps as objects and null to fall back to the organization', function (): void {

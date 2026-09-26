@@ -123,21 +123,17 @@ try {
             }
         }
 
-        $tag = null;
-
         foreach (array_diff_key($wanted, $present) as $monitor) {
             printf("  + create  %-4s %s\n", $monitor->checkType()->value, $monitor->target());
             $counts['created']++;
 
             if (! $dryRun) {
-                // Only now does the customer need a tag; ensure() finds or creates it.
-                $tag ??= $client->tags()->ensure(CUSTOMER_TAG_KEY, $customer)->tag;
-
-                // The generated Idempotency-Key covers the retries of this call. A stable key
-                // (as in 01-onboard-customer.php) would be wrong for a sync: for 24 hours it
-                // would replay an earlier run's create instead of recreating a service that
-                // went away in between.
-                $client->services()->create($monitor->tags($tag), $catalog);
+                // The tag goes along by name: the first service that carries it creates the
+                // customer's tag. The generated Idempotency-Key covers the retries of this call.
+                // A stable key (as in 01-onboard-customer.php) would be wrong for a sync: for 24
+                // hours it would replay an earlier run's create instead of recreating a service
+                // that went away in between.
+                $client->services()->create($monitor->tags($label), $catalog);
             }
         }
 

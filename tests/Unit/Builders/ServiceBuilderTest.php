@@ -159,6 +159,57 @@ describe('factories', function (): void {
     });
 });
 
+describe('tags', function (): void {
+    it('takes Tag objects, tag ids and tag names in any mix', function (): void {
+        $tag = Tag::fromArray(tagPayload());
+
+        expect(ServiceBuilder::manual('Phone')->tags($tag, 'customer:4711', ' env=prod ', 'critical', 'W2TuHYS9a6keIj7CnzU12', $tag->id)->toArray())
+            ->toBe([
+                'name' => 'Phone',
+                'check_type' => 'manual',
+                'tags' => [$tag->id, 'customer:4711', 'env=prod', 'critical', 'W2TuHYS9a6keIj7CnzU12'],
+            ]);
+    });
+
+    it('builds the monitor shown in the README header, tag names and all', function (): void {
+        $builder = ServiceBuilder::http('Checkout', 'https://shop.example.com/health')
+            ->interval(30)
+            ->probes('ffm', 'hel', 'nyc', 'cgn')
+            ->header('X-Api-Key', 'my-shop-api-key')
+            ->tags('ecommerce', 'checkout', 'customer:shop-123')
+            ->condition(
+                HttpCondition::statusCode()
+                    ->gte(500)
+                    ->down(),
+                HttpCondition::json('status')
+                    ->neq('ok')
+                    ->degraded(),
+                HttpCondition::responseTimeMs()
+                    ->gt(2000)
+                    ->degraded(),
+            );
+
+        expect(Json::decode(Json::encode($builder->toArray())))->toBe([
+            'name' => 'Checkout',
+            'check_type' => 'http',
+            'target' => 'https://shop.example.com/health',
+            'tags' => ['ecommerce', 'checkout', 'customer:shop-123'],
+            'settings' => [
+                'interval_seconds' => 30,
+                'assigned_probes' => ['ffm', 'hel', 'nyc', 'cgn'],
+                'config' => [
+                    'headers' => ['X-Api-Key' => 'my-shop-api-key'],
+                    'conditions' => [
+                        ['field' => 'status_code', 'operator' => 'gte', 'value' => 500, 'status' => 'down'],
+                        ['field' => 'json.status', 'operator' => 'neq', 'value' => 'ok', 'status' => 'degraded'],
+                        ['field' => 'response_time_ms', 'operator' => 'gt', 'value' => 2000, 'status' => 'degraded'],
+                    ],
+                ],
+            ],
+        ]);
+    });
+});
+
 describe('immutability', function (): void {
     it('returns a new instance from every setter and leaves the receiver untouched', function (): void {
         $base = ServiceBuilder::http('Shop', 'https://shop.example.com')->header('A', '1');
@@ -229,7 +280,7 @@ describe('guards', function (): void {
         'port zero' => [fn(): ServiceBuilder => ServiceBuilder::tcp('Mail', 'mail.example.com', 0), 'between 1 and 65535'],
         'port too high' => [fn(): ServiceBuilder => ServiceBuilder::tcp('Mail', 'mail.example.com', 65536), 'between 1 and 65535'],
         'blank host' => [fn(): ServiceBuilder => ServiceBuilder::icmp('Gateway', ' '), 'host must not be blank'],
-        'label instead of tag id' => [fn(): ServiceBuilder => ServiceBuilder::manual('Phone')->tags('kunde:4711'), 'not a tag id'],
+        'blank tag' => [fn(): ServiceBuilder => ServiceBuilder::manual('Phone')->tags('customer:4711', ' '), 'tag must not be blank'],
         'zero interval' => [fn(): ServiceBuilder => ServiceBuilder::http('Shop', 'https://x')->interval(0), 'at least one second'],
         'zero timeout' => [fn(): ServiceBuilder => ServiceBuilder::http('Shop', 'https://x')->timeout(0), 'at least one second'],
         'negative retries' => [fn(): ServiceBuilder => ServiceBuilder::http('Shop', 'https://x')->retries(-1), 'negative'],

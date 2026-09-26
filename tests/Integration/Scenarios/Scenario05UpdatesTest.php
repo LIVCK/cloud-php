@@ -191,7 +191,7 @@ describe('scenario 5: updates', function () use ($skip): void {
                 expect(static fn(): Service => $client->services()->update($id, UpdateService::make()))->toThrow(InvalidArgumentException::class);
                 expect(static fn(): UpdateService => UpdateService::make()->withName(' '))->toThrow(InvalidArgumentException::class);
                 expect(static fn(): UpdateService => UpdateService::make()->withTarget(''))->toThrow(InvalidArgumentException::class);
-                expect(static fn(): UpdateService => UpdateService::make()->withTags('customer:4711'))->toThrow(InvalidArgumentException::class);
+                expect(static fn(): UpdateService => UpdateService::make()->withTags('customer:4711', ' '))->toThrow(InvalidArgumentException::class);
                 expect(static fn(): UpdateService => UpdateService::make()->withIntervalSeconds(0))->toThrow(InvalidArgumentException::class);
                 expect(static fn(): UpdateService => UpdateService::make()->withProbes())->toThrow(InvalidArgumentException::class);
                 expect(static fn(): UpdateService => UpdateService::make()->withHeader('', 'x'))->toThrow(InvalidArgumentException::class);

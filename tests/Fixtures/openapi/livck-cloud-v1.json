@@ -3106,7 +3106,7 @@
                         "type": "object"
                     },
                     "tags": {
-                        "description": "Tag ids from GET /v1/tags. Unknown ids are rejected; a tag is never created\nimplicitly.",
+                        "description": "Tag ids (from GET /v1/tags) or tag names, in any mix: `critical`, `key:value` or\n`key=value` (the key is case-insensitive, the value exact). A name that does not exist\nyet is created with the service. The exception is an entry that looks like a tag id\n(21 letters, digits, `_` or `-`, with at least one uppercase letter): it is never\ncreated and must be an existing tag's id or name.",
                         "items": {
                             "type": "string"
                         },
@@ -3749,7 +3749,7 @@
                         "type": "object"
                     },
                     "tags": {
-                        "description": "Tag ids from GET /v1/tags. Replaces the service's tags (`[]` removes them all;\ntags maintained by a server agent stay). Unknown ids are rejected; a tag is never\ncreated implicitly.",
+                        "description": "Replaces the service's tags (`[]` removes them all; tags maintained by a server agent\nstay). Tag ids (from GET /v1/tags) or tag names, in any mix: `critical`, `key:value`\nor `key=value` (the key is case-insensitive, the value exact). A name that does not\nexist yet is created. The exception is an entry that looks like a tag id (21 letters,\ndigits, `_` or `-`, with at least one uppercase letter): it is never created and must\nbe an existing tag's id or name.",
                         "items": {
                             "type": "string"
                         },
