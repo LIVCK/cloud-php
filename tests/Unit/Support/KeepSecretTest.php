@@ -13,6 +13,6 @@ it('is the server\'s write-only sentinel, verbatim', function (): void {
 it('recognises the sentinel in values read back from the API', function (): void {
     expect(KeepSecret::isSentinel('__LIVCK_KEEP_UNCHANGED__'))->toBeTrue()
         ->and(KeepSecret::isSentinel(KeepSecret::keep()))->toBeTrue()
-        ->and(KeepSecret::isSentinel('sonar:abc'))->toBeFalse()
+        ->and(KeepSecret::isSentinel('enc:abc'))->toBeFalse()
         ->and(KeepSecret::isSentinel(null))->toBeFalse();
 });

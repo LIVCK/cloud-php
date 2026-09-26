@@ -1,8 +1,9 @@
 # LIVCK Cloud PHP SDK
 
 The PHP client for the [LIVCK Cloud](https://livck.cloud) API: uptime monitoring, status
-pages and the incident and maintenance history behind them. It talks to LIVCK Cloud
-(`api.livck.cloud`) only; LIVCK Self-Hosted is a separate product with its own API.
+pages on [statuspage.de](https://statuspage.de) or your own domain, and the incident and
+maintenance history behind them. It talks to LIVCK Cloud (`api.livck.cloud`) only; LIVCK
+Self-Hosted is a separate product with its own API.
 
 ## Requirements
 
@@ -317,7 +318,8 @@ $http->assertSent(fn(RecordedRequest $r): bool => $r->matches('POST', '/v1/tags/
 
 - Documentation: [docs.livck.cloud](https://docs.livck.cloud)
 - API reference: [api.livck.cloud](https://api.livck.cloud)
+- Status pages: [statuspage.de](https://statuspage.de)
 
 ## License
 
-Proprietary, LIVCK Cloud. All rights reserved.
+MIT. See [LICENSE](LICENSE).

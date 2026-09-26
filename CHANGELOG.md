@@ -4,7 +4,7 @@ All notable changes to this package are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.0] - Unreleased
+## [1.0.0] - 2026-09-26
 
 First release, for PHP 8.3 and later.
 
@@ -41,3 +41,5 @@ First release, for PHP 8.3 and later.
 - `CloudClient::fake()` with `MockResponse` and request assertions for testing integrations.
 - Examples for resellers: onboarding, a customer overview, a billing sync, offboarding, error
   handling and testing.
+
+[1.0.0]: https://github.com/LIVCK/cloud-php/releases/tag/v1.0.0
