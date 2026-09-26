@@ -4,6 +4,20 @@ All notable changes to this package are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-09-27
+
+### Added
+
+- Service tags by id or by name: `ServiceBuilder::tags()` and `UpdateService::withTags()` take
+  Tag objects, tag ids and tag names (`customer:4711`, `env=prod`) in any mix; a name that does
+  not exist yet is created with the service.
+
+### Fixed
+
+- Met expectations of `FakeHttpClient` count as PHPUnit assertions, so a test that asserts only
+  through the fake is no longer reported as risky.
+- `me()`, `probes()` and `checkTypes()` document the `TransportException` they can throw.
+
 ## [1.0.0] - 2026-09-26
 
 First release, for PHP 8.3 and later.
@@ -42,4 +56,5 @@ First release, for PHP 8.3 and later.
 - Examples for resellers: onboarding, a customer overview, a billing sync, offboarding, error
   handling and testing.
 
+[1.1.0]: https://github.com/LIVCK/cloud-php/releases/tag/v1.1.0
 [1.0.0]: https://github.com/LIVCK/cloud-php/releases/tag/v1.0.0
