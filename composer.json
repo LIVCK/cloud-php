@@ -67,7 +67,10 @@
     "scripts": {
         "test": "pest",
         "test:contract": "pest --testsuite=Contract",
-        "test:integration": "pest --testsuite=Integration",
+        "test:integration": [
+            "Composer\\Config::disableProcessTimeout",
+            "pest --testsuite=Integration"
+        ],
         "spec:update": "@php tools/update-openapi.php",
         "lint": "pint --test",
         "lint:fix": "pint",
