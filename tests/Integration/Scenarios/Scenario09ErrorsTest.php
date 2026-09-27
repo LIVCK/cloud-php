@@ -43,12 +43,13 @@ describe('scenario 9: errors', function (): void {
         $catalog = $client->checkTypes();
 
         try {
-            $journey->step('1 a malformed target, an interval below the plan, an unknown location, an unknown tag', function () use ($client): void {
+            $journey->step('1 a malformed target, an interval below the plan, an unknown location, an unknown tag id', function () use ($client): void {
                 $cases = [
                     'target' => ServiceBuilder::http(Scenario::name('bad-target'), 'not a url'),
                     'settings.interval_seconds' => ServiceBuilder::http(Scenario::name('bad-interval'), 'https://example.com/')->interval(10),
                     'settings.assigned_probes.0' => ServiceBuilder::http(Scenario::name('bad-probe'), 'https://example.com/')->probes('zzz'),
-                    'tags.0' => ServiceBuilder::manual(Scenario::name('bad-tag'))->tags(str_repeat('x', 21)),
+                    // Shaped like a tag id, uppercase included: anything else is a tag name, which is created.
+                    'tags.0' => ServiceBuilder::manual(Scenario::name('bad-tag'))->tags('Zz' . substr(bin2hex(random_bytes(10)), 0, 19)),
                 ];
 
                 foreach ($cases as $field => $builder) {
