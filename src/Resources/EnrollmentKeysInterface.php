@@ -23,8 +23,9 @@ use LIVCK\Cloud\Query\EnrollmentKeyQuery;
  * A reseller creates one `single` key per server of a customer, with the customer's tag, and
  * hands out the install command. The server enrolls with the key (the installer calls
  * `POST /v1/agents/enroll` with it, never with your API token) and carries the key's tags,
- * which the install cannot replace. Poll {@see get()} until the key is exhausted: its
- * `services` then name the new server.
+ * which the install cannot replace. Poll {@see get()} until `latestService()` names the new
+ * server; the status only says whether the key can still enroll one. A key that can no longer
+ * enroll is deleted once it is more than 30 days old.
  *
  * Abilities: every call needs `agents.manage`.
  */
@@ -66,8 +67,8 @@ interface EnrollmentKeysInterface
      *
      * @throws InvalidArgumentException for a malformed idempotency key (nothing is sent)
      * @throws ValidationException for an unknown tag id (on its entry, `tags.2`), a tag that syncs a status page
-     *                             group, a lifetime beyond the key type's, a use cap out of range, or agent tags
-     *                             allowed in a reseller organization
+     *                             group, an expiry that is not in the future or beyond the key type's lifetime, a
+     *                             use cap out of range, or agent tags allowed in a reseller organization
      * @throws PermissionDeniedException when server monitoring is switched off for the organization
      * @throws ApiException
      */

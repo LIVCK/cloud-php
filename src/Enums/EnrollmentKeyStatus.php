@@ -8,7 +8,8 @@ use LIVCK\Cloud\Enums\Concerns\ToleratesUnknownValues;
 
 /**
  * Whether an enrollment key can still enroll a server, and if not, why. When several reasons
- * apply, the first of revoked, expired and exhausted is reported.
+ * apply, the first of revoked, exhausted and expired is reported: a used-up key that has expired
+ * since stays exhausted.
  */
 enum EnrollmentKeyStatus: string implements ApiEnum
 {

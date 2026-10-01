@@ -134,6 +134,7 @@ final class ResponseSamples
             self::raw('services.agent-metrics.history', 'GET /services/{service}/agent-metrics/history', MockResponse::json(ServiceFixtures::agentMetricsHistory())),
             self::item('services.agent-metrics.history.empty', 'GET /services/{service}/agent-metrics/history', [
                 'window_seconds' => 3600,
+                'available_keys' => [],
                 'timestamps' => [],
                 'metrics' => JsonObject::empty(),
                 'stats' => JsonObject::empty(),

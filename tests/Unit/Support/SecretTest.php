@@ -36,3 +36,16 @@ it('refuses to be serialized', function (): void {
 it('cannot be turned into a string by accident', function (): void {
     expect(new Secret('lve_supersecret'))->not->toBeInstanceOf(Stringable::class);
 });
+
+it('keeps the value out of what Symfony VarDumper prints', function (): void {
+    $closure = (new ReflectionProperty(Secret::class, 'value'))->getValue(new Secret('lve_supersecret'));
+
+    if (! $closure instanceof Closure) {
+        throw new LogicException('The value is expected inside a closure.');
+    }
+
+    $captured = (new ReflectionFunction($closure))->getStaticVariables();
+
+    // VarDumper prints a closure's captured strings and numbers, and cuts every object.
+    expect(array_filter($captured, static fn(mixed $variable): bool => ! is_object($variable)))->toBe([]);
+});

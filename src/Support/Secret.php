@@ -13,10 +13,11 @@ use SensitiveParameter;
  * A credential the API hands out once, such as the key of a new enrollment key and the install
  * command that carries it, held with the same protection as the API token.
  *
- * The value lives inside a closure, which `var_export()` prints without its bound variables;
- * {@see __debugInfo()} covers `var_dump()` and `print_r()`; `json_encode()` sees no public
- * property; serialisation is refused, so the value never ends up in a queue payload or a cache
- * by accident. There is deliberately no `__toString()`: string interpolation fails instead of
+ * The value lives inside a closure, which `var_export()` prints without its bound variables. The
+ * closure holds it in an object, not as a string: Symfony's VarDumper (`dd()`, `dump()`) prints
+ * the strings a closure captures, but never opens the objects. {@see __debugInfo()} covers
+ * `var_dump()` and `print_r()`; `json_encode()` sees no public property; serialisation is
+ * refused, so the value never ends up in a queue payload or a cache by accident. There is deliberately no `__toString()`: string interpolation fails instead of
  * printing the value, and {@see reveal()} is the one way to read it.
  */
 final readonly class Secret
@@ -30,7 +31,10 @@ final readonly class Secret
             throw new InvalidArgumentException('A secret must not be empty.');
         }
 
-        $this->value = static fn(): string => $value;
+        $box = new readonly class ($value) {
+            public function __construct(#[SensitiveParameter] public string $value) {}
+        };
+        $this->value = static fn(): string => $box->value;
     }
 
     /** The value in plain text. Hand it on, never log it. */

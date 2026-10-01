@@ -170,20 +170,25 @@ customer's tag. The key's tags are the server's; the install cannot replace them
 
 ```php
 use LIVCK\Cloud\Builders\EnrollmentKeyBuilder;
-use LIVCK\Cloud\Enums\EnrollmentKeyStatus;
 
 // One server, valid for 24 hours. The key comes back this once.
-$created = $client->enrollmentKeys()->create(EnrollmentKeyBuilder::single('Customer 4711')->tags($tag));
+$created = $client->enrollmentKeys()->create(EnrollmentKeyBuilder::single('Customer 4711')->tags('customer-servers:4711'));
 $command = $created->installCommand->reveal(); // run on the server, as root
 
-// Later: once the server has enrolled, the key is exhausted and names it.
-$key = $client->enrollmentKeys()->get($created->key->id);
+// Later, from a scheduled job: the key names the server once it has enrolled.
+$enrolled = $client->enrollmentKeys()->get($created->key->id)->latestService();
 
-if ($key->status === EnrollmentKeyStatus::Exhausted && $key->latestService() !== null) {
-    $server = $client->services()->get($key->latestService()->id);
+if ($enrolled !== null) {
+    $server = $client->services()->get($enrolled->id);
     $cpu = $client->services()->agentMetrics($server->id)->metric('sys.cpu.total_pct');
 }
 ```
+
+Ask the key for its server, not for its status: `status` only says whether the key can still
+enroll one. A key that can no longer enroll is deleted once it is more than 30 days old, so look
+within that time. A tag that fills a
+synced status page group cannot go on a key (`ValidationException` on `tags`), because enrolling
+never puts a server on a status page: give the servers a tag of their own, as above.
 
 `token` and `installCommand` are `Secret`s: `reveal()` reads them, dumps, log lines and
 `json_encode()` never show them, and serializing one is refused. `fleet()` makes a key for many
@@ -352,6 +357,9 @@ $http->assertSent(fn(RecordedRequest $r): bool => $r->matches('POST', '/v1/tags/
 
 `MockResponse` also builds list pages, network errors and replays; `$http->recorded()` and
 `$http->delays()` show what was sent and how long retries would have waited.
+
+Type against `CloudClientInterface` and the resource interfaces, and mock them in tests, but do
+not implement them in your own classes: minor releases add methods to them.
 
 ## Links
 

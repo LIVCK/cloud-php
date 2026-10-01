@@ -13,8 +13,9 @@ use SensitiveParameter;
  * The API token, held so that it cannot leak by accident.
  *
  * The value lives inside a closure, which `var_export()` prints without its bound
- * variables; {@see __debugInfo()} covers `var_dump()` and `print_r()`; serialisation is
- * refused. Nothing reads the token back except {@see authorizationHeader()}, and
+ * variables. The closure holds it in an object, not as a string: Symfony's VarDumper
+ * (`dd()`, `dump()`) prints the strings a closure captures, but never opens the objects.
+ * {@see __debugInfo()} covers `var_dump()` and `print_r()`; serialisation is refused. Nothing reads the token back except {@see authorizationHeader()}, and
  * {@see redact()} scrubs it from any text that might have picked it up (an HTTP
  * client's exception message, for instance).
  */
@@ -35,7 +36,10 @@ final readonly class BearerToken
             throw new InvalidArgumentException('The API token must consist of printable ASCII characters without whitespace.');
         }
 
-        $this->value = static fn(): string => $token;
+        $box = new readonly class ($token) {
+            public function __construct(#[SensitiveParameter] public string $value) {}
+        };
+        $this->value = static fn(): string => $box->value;
     }
 
     public function authorizationHeader(): string

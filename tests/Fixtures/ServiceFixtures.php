@@ -246,6 +246,7 @@ final class ServiceFixtures
     {
         return [
             'window_seconds' => 86400,
+            'available_keys' => ['sys.cpu.total_pct', 'sys.disk._root.used_pct', 'sys.net.eth0.rx_bps'],
             'timestamps' => ['2026-10-01T09:00:00Z', '2026-10-01T09:06:00Z', '2026-10-01T09:12:00Z'],
             'metrics' => [
                 'sys.cpu.total_pct' => ['avg' => [12.5, 30, 18.25], 'max' => [20.0, 64.5, 31]],

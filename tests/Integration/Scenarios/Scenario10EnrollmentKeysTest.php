@@ -64,11 +64,13 @@ describe('scenario 10: enrollment keys and server agents', function () use ($ski
             $tag = $journey->step('1 the customer tag', static fn(): Tag => Scenario::customerTag($client, $cleanup, 'servers'));
 
             $created = $journey->step('2 a single key with the customer tag; the key itself only in this answer', function () use ($client, $cleanup, $tag): CreatedEnrollmentKey {
-                $created = DtoAudit::inspect($client->enrollmentKeys()->create(
+                $created = $client->enrollmentKeys()->create(
                     EnrollmentKeyBuilder::single(Scenario::name('key'))->tags($tag)->expiresAt(new DateTimeImmutable('+2 hours')),
-                ), 'enrollmentKeys.create');
+                );
                 $key = $created->key;
+                // Registered before anything else can fail, so a working key never stays behind.
                 $cleanup->add('enrollment key ' . $key->name, static fn() => $client->enrollmentKeys()->revoke($key->id));
+                DtoAudit::inspect($created, 'enrollmentKeys.create');
                 $plain = $created->token->reveal();
 
                 expect($key->type)->toBe(EnrollmentKeyType::Single)
@@ -239,8 +241,10 @@ describe('scenario 10: enrollment keys and server agents', function () use ($ski
             });
 
             $journey->step('10 revoke: a fresh fleet key twice, the used key once; revoked wins', function () use ($client, $cleanup, $key): void {
-                $fleet = DtoAudit::inspect($client->enrollmentKeys()->create(EnrollmentKeyBuilder::fleet(Scenario::name('fleet'), 2)), 'enrollmentKeys.create')->key;
+                $createdFleet = $client->enrollmentKeys()->create(EnrollmentKeyBuilder::fleet(Scenario::name('fleet'), 2)->expiresAt(new DateTimeImmutable('+2 hours')));
+                $fleet = $createdFleet->key;
                 $cleanup->add('enrollment key ' . $fleet->name, static fn() => $client->enrollmentKeys()->revoke($fleet->id));
+                DtoAudit::inspect($createdFleet, 'enrollmentKeys.create');
 
                 $client->enrollmentKeys()->revoke($fleet->id);
                 $client->enrollmentKeys()->revoke($fleet->id);

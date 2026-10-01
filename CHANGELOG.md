@@ -22,6 +22,12 @@ All notable changes to this package are documented here. The format follows
 
 - `CloudClientInterface` has `enrollmentKeys()` and `ServicesInterface` has `agentMetrics()` and
   `agentMetricsHistory()`; a class of your own that implements either interface needs them.
+  The README now says so: type against the interfaces and mock them, but do not implement them.
+
+### Fixed
+
+- The API token no longer shows in Symfony VarDumper output (`dd()`, `dump()`), which printed
+  the string the token's closure captured.
 
 ## [1.1.0] - 2026-09-28
 

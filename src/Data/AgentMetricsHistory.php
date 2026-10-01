@@ -15,7 +15,8 @@ use LIVCK\Cloud\Support\Field;
  *
  * Keys are the flat keys of the metric catalog, as conditions and the current figures use them:
  * `sys.cpu.total_pct`, `sys.disk._root.used_pct`, `sys.net.eth0.rx_bps`. Without a choice of
- * keys, every key the server reported in the window is there.
+ * keys, the first 100 keys the server reported in the window are there, the host's own figures
+ * first; `availableKeys` names all of them.
  */
 final readonly class AgentMetricsHistory
 {
@@ -24,6 +25,7 @@ final readonly class AgentMetricsHistory
     /**
      * @param int $windowSeconds the window the buckets cover, ending now; shorter than asked when the plan keeps
      *                           data for less time
+     * @param list<string> $availableKeys every key the server reported in the window, also those not asked for
      * @param list<DateTimeImmutable> $timestamps the start of each bucket, oldest first, UTC
      * @param array<string, AgentMetricSeries> $metrics per key: average and peak per bucket, aligned with $timestamps
      * @param array<string, AgentMetricStats> $stats per key: the figures over the whole window
@@ -31,6 +33,7 @@ final readonly class AgentMetricsHistory
      */
     public function __construct(
         public int $windowSeconds,
+        public array $availableKeys,
         public array $timestamps,
         public array $metrics,
         public array $stats,
@@ -44,6 +47,7 @@ final readonly class AgentMetricsHistory
     {
         return new self(
             Field::int($data, 'window_seconds'),
+            Field::stringList($data, 'available_keys'),
             self::instantList($data, 'timestamps'),
             array_map(AgentMetricSeries::fromArray(...), self::metricObjects($data, 'metrics')),
             array_map(AgentMetricStats::fromArray(...), self::metricObjects($data, 'stats')),

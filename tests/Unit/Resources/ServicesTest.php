@@ -745,6 +745,7 @@ describe('agentMetricsHistory', function (): void {
 
         expect($history)->toBeInstanceOf(AgentMetricsHistory::class)
             ->and($history->windowSeconds)->toBe(86400)
+            ->and($history->availableKeys)->toBe(['sys.cpu.total_pct', 'sys.disk._root.used_pct', 'sys.net.eth0.rx_bps'])
             ->and(array_map(static fn(DateTimeImmutable $at): string => $at->format(DATE_ATOM), $history->timestamps))
             ->toBe(['2026-10-01T09:00:00+00:00', '2026-10-01T09:06:00+00:00', '2026-10-01T09:12:00+00:00'])
             ->and(array_keys($history->metrics))->toBe(['sys.cpu.total_pct', 'sys.disk._root.used_pct'])
@@ -782,6 +783,7 @@ describe('agentMetricsHistory', function (): void {
     it('reads an empty window and a key without samples', function (): void {
         [$client] = fakeClient([MockResponse::json(['data' => [
             'window_seconds' => 3600,
+            'available_keys' => [],
             'timestamps' => [],
             'metrics' => [],
             'stats' => ['sys.swap.used_pct' => ['last' => null, 'min' => null, 'avg' => null, 'max' => null, 'p50' => null, 'p95' => null, 'p99' => null, 'samples' => '0']],

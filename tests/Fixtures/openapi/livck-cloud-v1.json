@@ -429,7 +429,7 @@
                         "type": "array"
                     },
                     "status": {
-                        "description": "`active` while it can still enroll a server; otherwise why not, in this order: `revoked`,\n`expired`, `exhausted` (every use taken). Dead keys are deleted 30 days after creation.",
+                        "description": "`active` while it can still enroll a server; otherwise why not, in this order: `revoked`,\n`exhausted` (every use taken), `expired`. A key that can no longer enroll is deleted\nonce it is more than 30 days old.",
                         "type": "string"
                     },
                     "tags": {
@@ -647,6 +647,7 @@
                     },
                     "tags": {
                         "items": {
+                            "description": "Valid UTF-8, refused here before a use is taken: a JSON body always is, a query\nstring or a form body need not be, and the tags are echoed back after the commit.",
                             "maxLength": 64,
                             "type": "string"
                         },
@@ -711,7 +712,7 @@
                         "type": "array"
                     },
                     "status": {
-                        "description": "`active` while it can still enroll a server; otherwise why not, in this order: `revoked`,\n`expired`, `exhausted` (every use taken). Dead keys are deleted 30 days after creation.",
+                        "description": "`active` while it can still enroll a server; otherwise why not, in this order: `revoked`,\n`exhausted` (every use taken), `expired`. A key that can no longer enroll is deleted\nonce it is more than 30 days old.",
                         "type": "string"
                     },
                     "tags": {
@@ -781,7 +782,7 @@
                 "type": "object"
             },
             "EnrollmentTokenStatus": {
-                "description": "`active` while a key can still enroll a server. Otherwise why not, in this order: `revoked`, `expired`, `exhausted` (every use taken). A revoked key that has also expired is `revoked`.\n",
+                "description": "`active` while a key can still enroll a server. Otherwise why not, in this order: `revoked`, `exhausted` (every use taken), `expired`. A used-up key that has expired since stays `exhausted`; a revoked key is `revoked` whatever else applies.\n",
                 "enum": [
                     "active",
                     "exhausted",
@@ -5520,7 +5521,7 @@
                 ]
             },
             "post": {
-                "description": "The response carries the key (`token`) and the ready-to-run `install_command`, this once.\nStore neither: create a new key whenever a server is to be added. A server enrolls with\n`POST /v1/agents/enroll` through the installer, never with your API token.",
+                "description": "The response carries the key (`token`) and the ready-to-run `install_command`, this once.\nFor one server, create a new key each time instead of keeping one; a `fleet` key's install\ncommand goes into your image or cloud-init. A server enrolls with `POST /v1/agents/enroll`\nthrough the installer, never with your API token.",
                 "operationId": "v1.enrollment-keys.store",
                 "parameters": [
                     {
@@ -9604,7 +9605,7 @@
         },
         "/services/{service}/agent-metrics/history": {
             "get": {
-                "description": "The window ends now. It is split into about 240 buckets, and every metric gets the bucket\naverage (`avg`) and the bucket peak (`max`) on the shared `timestamps`; null is a bucket\nwithout a report. `stats` sums up the whole window per metric, percentiles included.\nWindows up to 14 days are read from the raw reports, longer ones from hourly and daily\nrollups.",
+                "description": "The window ends now. It is split into about 240 buckets, and every metric gets the bucket\naverage (`avg`) and the bucket peak (`max`) on the shared `timestamps`; null is a bucket\nwithout a report. `stats` sums up the whole window per metric, percentiles included.\nWindows up to 14 days are read from the raw reports, longer ones from hourly and daily\nrollups. Without `keys` it covers up to 100 metrics, the host's own figures first;\n`available_keys` names every metric the server reported.",
                 "operationId": "v1.services.agent-metrics.history",
                 "parameters": [
                     {
@@ -9634,7 +9635,7 @@
                         }
                     },
                     {
-                        "description": "Only these metrics, at most 100, repeated as `keys[]=` or comma-separated\n(`keys=sys.cpu.total_pct,sys.mem.used_pct`). Keys are the ones conditions use; a\nper-device key names the device (`sys.disk._root.used_pct`). Absent or empty → every\nmetric the server reported in the window.",
+                        "description": "Only these metrics, at most 100, repeated as `keys[]=` or comma-separated\n(`keys=sys.cpu.total_pct,sys.mem.used_pct`). Keys are the ones conditions use; a\nper-device key names the device (`sys.disk._root.used_pct`). Absent or empty → the\nfirst 100 metrics the server reported in the window, the host's own figures first\n(`available_keys` in the response names them all).",
                         "example": "sys.cpu.total_pct",
                         "in": "query",
                         "name": "keys[]",
@@ -9654,6 +9655,13 @@
                                     "properties": {
                                         "data": {
                                             "properties": {
+                                                "available_keys": {
+                                                    "description": "Every server metric reported in the window. Without `keys` the history covers the\nfirst 100 of them, the host's own figures first.",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "type": "array"
+                                                },
                                                 "metrics": {
                                                     "additionalProperties": {
                                                         "properties": {
@@ -9763,6 +9771,7 @@
                                             },
                                             "required": [
                                                 "window_seconds",
+                                                "available_keys",
                                                 "timestamps",
                                                 "metrics",
                                                 "stats"

@@ -2,7 +2,12 @@
 
 declare(strict_types=1);
 
+use LIVCK\Cloud\CloudClientInterface;
+use LIVCK\Cloud\Data\EnrollmentKey;
+use LIVCK\Cloud\Enums\EnrollmentKeyStatus;
 use LIVCK\Cloud\Exceptions\NotFoundException;
+use LIVCK\Cloud\Exceptions\PermissionDeniedException;
+use LIVCK\Cloud\Query\EnrollmentKeyQuery;
 use LIVCK\Cloud\Query\IncidentQuery;
 use LIVCK\Cloud\Query\MaintenanceQuery;
 use LIVCK\Cloud\Query\ServiceQuery;
@@ -18,9 +23,29 @@ use LIVCK\Cloud\Tests\Integration\Support\Scenario;
  * The safety net, last of all: whatever still carries the scenario prefix in either
  * organization (from this run or an earlier, interrupted one) is removed, in the order the
  * server allows: pages, then services (with what they carried alone), then the remaining
- * incidents and windows, then tags. Prints the run's DTO audit at the end.
+ * incidents and windows, then enrollment keys that can still enroll, then tags. Prints the
+ * run's DTO audit at the end.
  */
 $skip = LiveApi::skipReason();
+
+/**
+ * The enrollment keys a run left able to enroll a server: active, named with the scenario
+ * prefix. Empty for a token without `agents.manage`.
+ *
+ * @return list<EnrollmentKey>
+ */
+function sweepableEnrollmentKeys(CloudClientInterface $client): array
+{
+    try {
+        $active = iterator_to_array($client->enrollmentKeys()->each(
+            EnrollmentKeyQuery::make()->withStatuses(EnrollmentKeyStatus::Active)->withPerPage(100),
+        ), false);
+    } catch (PermissionDeniedException) {
+        return [];
+    }
+
+    return array_values(array_filter($active, static fn(EnrollmentKey $key): bool => Scenario::isOurs($key->name)));
+}
 
 describe('scenario 12: sweep', function () use ($skip): void {
     it('removes everything with the scenario prefix and reports the DTO audit', function (): void {
@@ -74,6 +99,12 @@ describe('scenario 12: sweep', function () use ($skip): void {
                         }
                     }
 
+                    // Keys first: a tag an active key carries cannot be deleted. Revoked keys stay
+                    // until the server deletes them; only a key that still enrolls is a leftover.
+                    foreach (sweepableEnrollmentKeys($client) as $key) {
+                        $gone('enrollment key ' . $key->name, static fn() => $client->enrollmentKeys()->revoke($key->id));
+                    }
+
                     foreach (iterator_to_array($client->tags()->each(TagQuery::make()->withPerPage(100)), false) as $tag) {
                         if (Scenario::isOurs($tag->key)) {
                             $gone('tag ' . $tag->label, static fn() => $client->tags()->delete($tag->id));
@@ -105,6 +136,10 @@ describe('scenario 12: sweep', function () use ($skip): void {
                         if (Scenario::isOurs($page->slug)) {
                             $left[] = 'status page ' . $page->slug;
                         }
+                    }
+
+                    foreach (sweepableEnrollmentKeys($client) as $key) {
+                        $left[] = 'enrollment key ' . $key->name;
                     }
 
                     expect($left)->toBe([]);

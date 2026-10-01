@@ -73,3 +73,12 @@ it('refuses blank names, tags and keys', function (Closure $build, string $messa
     'blank tag' => [fn(): EnrollmentKeyBuilder => EnrollmentKeyBuilder::single()->tags('customer:4711', ''), 'must not be blank'],
     'blank attribute key' => [fn(): EnrollmentKeyBuilder => EnrollmentKeyBuilder::single()->attribute(' ', 1), 'must not be blank'],
 ]);
+
+it('keeps the expiry it was given, even when the caller changes that DateTime later', function (): void {
+    $expiry = new DateTime('2026-10-03T12:00:00+00:00');
+    $builder = EnrollmentKeyBuilder::single()->expiresAt($expiry);
+
+    $expiry->modify('+30 days');
+
+    expect($builder->toArray()['expires_at'] ?? null)->toEqual(new DateTimeImmutable('2026-10-03T12:00:00+00:00'));
+});

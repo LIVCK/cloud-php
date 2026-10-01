@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace LIVCK\Cloud\Builders;
 
+use DateTimeImmutable;
 use DateTimeInterface;
 use LIVCK\Cloud\Data\Tag;
 use LIVCK\Cloud\Enums\EnrollmentKeyType;
@@ -80,7 +81,8 @@ final readonly class EnrollmentKeyBuilder
      */
     public function expiresAt(DateTimeInterface $expiresAt): self
     {
-        return $this->with('expires_at', $expiresAt);
+        // A copy of a mutable DateTime: the caller changing it later must not change this builder.
+        return $this->with('expires_at', $expiresAt instanceof DateTimeImmutable ? $expiresAt : DateTimeImmutable::createFromInterface($expiresAt));
     }
 
     /**

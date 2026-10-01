@@ -80,7 +80,8 @@ final readonly class EnrollmentKey
 
     /**
      * The server that enrolled last, or null while none has: for a `single` key, the one server
-     * it was made for.
+     * it was made for. Also null when that server has been deleted since, or lies outside the
+     * token's access areas.
      */
     public function latestService(): ?Reference
     {
