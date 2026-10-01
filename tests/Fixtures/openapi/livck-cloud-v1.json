@@ -3193,7 +3193,7 @@
                         ]
                     },
                     "tags": {
-                        "description": "Tag ids (from GET /v1/tags) or tag names, in any mix, as for services. Every server\nenrolled with this key gets them, and the server cannot replace them. A tag that\nsyncs a status page group is rejected.",
+                        "description": "Tag ids (from GET /v1/tags) or tag names, in any mix, as for services. Every server\nenrolled with this key gets them, and the server cannot replace them. A tag that\nfills a synced status page group is fine: the server never shows on the page.",
                         "items": {
                             "type": "string"
                         },
@@ -9568,33 +9568,6 @@
                             }
                         },
                         "description": ""
-                    },
-                    "503": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ],
-                                    "type": "object"
-                                }
-                            }
-                        },
-                        "description": "The figures are temporarily unavailable. Retry after `Retry-After` seconds. Empty figures are never sent in their place: they would read as \"the server reported nothing\".",
-                        "headers": {
-                            "Retry-After": {
-                                "description": "Seconds to wait before retrying.",
-                                "example": 30,
-                                "schema": {
-                                    "type": "integer"
-                                }
-                            }
-                        }
                     }
                 },
                 "summary": "Current figures of a server",
@@ -9790,33 +9763,6 @@
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
-                    },
-                    "503": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ],
-                                    "type": "object"
-                                }
-                            }
-                        },
-                        "description": "The history is temporarily unavailable. Retry after `Retry-After` seconds. Empty series are never sent in their place: they would read as a gap in reporting.",
-                        "headers": {
-                            "Retry-After": {
-                                "description": "Seconds to wait before retrying.",
-                                "example": 30,
-                                "schema": {
-                                    "type": "integer"
-                                }
-                            }
-                        }
                     }
                 },
                 "summary": "History of a server's figures",
@@ -9973,33 +9919,6 @@
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
-                    },
-                    "503": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ],
-                                    "type": "object"
-                                }
-                            }
-                        },
-                        "description": "The check history is temporarily unavailable. Retry after `Retry-After` seconds. An empty list is never sent in its place: it would read as \"no failed checks\".",
-                        "headers": {
-                            "Retry-After": {
-                                "description": "Seconds to wait before retrying.",
-                                "example": 30,
-                                "schema": {
-                                    "type": "integer"
-                                }
-                            }
-                        }
                     }
                 },
                 "summary": "List check results (cursor-paginated)",

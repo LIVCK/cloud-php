@@ -65,8 +65,8 @@ final readonly class EnrollmentKeyBuilder
      * (`customer:4711`, `env=prod`) in any mix, resolved like a service's tags
      * ({@see ServiceBuilder::tags()}); a name that does not exist yet is created with the key.
      * A server cannot replace them: a tag the install asks for under the same key is left off.
-     * A tag that syncs a status page group is refused (`ValidationException` on `tags`), so that
-     * no server ever becomes public on its own.
+     * The customer's tag may also fill a synced status page group: the server gets it, but
+     * synced groups leave servers out, so it never shows on the page.
      *
      * @throws InvalidArgumentException for a blank entry, before anything is sent
      */

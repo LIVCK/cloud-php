@@ -711,30 +711,6 @@ describe('agentMetrics', function (): void {
         expect(fn(): AgentMetrics => $client->services()->agentMetrics(ServiceFixtures::ID))->toThrow(NotFoundException::class);
     });
 
-    it('surfaces figures that cannot be read as service unavailable with the retry hint', function (): void {
-        [$client] = singleShotClient([MockResponse::error('Server metrics are temporarily unavailable.', 503)->withRetryAfter(30)]);
-
-        try {
-            $client->services()->agentMetrics(ServiceFixtures::AGENT_ID);
-            expect(false)->toBeTrue('a ServiceUnavailableException was expected');
-        } catch (ServiceUnavailableException $e) {
-            expect($e->retryAfter())->toBe(30)
-                ->and($e->errorMessage())->toBe('Server metrics are temporarily unavailable.');
-        }
-    });
-
-    it('waits as told and asks again while the figures are unavailable', function (): void {
-        [$client, $http] = fakeClient([
-            MockResponse::error('Server metrics are temporarily unavailable.', 503)->withRetryAfter(30),
-            MockResponse::json(ServiceFixtures::agentMetrics()),
-        ]);
-
-        $figures = $client->services()->agentMetrics(ServiceFixtures::AGENT_ID);
-
-        expect($figures->metric('sys.cpu.total_pct'))->toBe(12.5)
-            ->and($http->recorded())->toHaveCount(2)
-            ->and($http->delays())->toBe([30.0]);
-    });
 });
 
 describe('agentMetricsHistory', function (): void {

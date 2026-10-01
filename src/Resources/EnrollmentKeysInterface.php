@@ -66,9 +66,10 @@ interface EnrollmentKeysInterface
      * hours, per token.
      *
      * @throws InvalidArgumentException for a malformed idempotency key (nothing is sent)
-     * @throws ValidationException for an unknown tag id (on its entry, `tags.2`), a tag that syncs a status page
-     *                             group, an expiry that is not in the future or beyond the key type's lifetime, a
-     *                             use cap out of range, or agent tags allowed in a reseller organization
+     * @throws ValidationException for an unknown tag id (on its entry, `tags.2`), tags that would put a server
+     *                             under two rules of one kind, an expiry that is not in the future or beyond the
+     *                             key type's lifetime, a use cap out of range, or agent tags allowed in a reseller
+     *                             organization
      * @throws PermissionDeniedException when server monitoring is switched off for the organization
      * @throws ApiException
      */

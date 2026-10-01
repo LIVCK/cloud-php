@@ -15,8 +15,8 @@ use LIVCK\Cloud\Support\Field;
  * `metrics` holds the latest value of every host key of the metric catalog, the keys conditions
  * use (`sys.cpu.total_pct`, `sys.mem.used_pct`, `sys.load.1`, …), null for a key the agent has
  * not reported within a day. The devices and the server's own checks come with their latest
- * values, keyed by sub-metric. A server that has not reported yet has nulls and empty lists;
- * figures that cannot be read right now are an error (503), never an empty answer.
+ * values, keyed by sub-metric. A server that has not reported yet has nulls and empty lists, and
+ * so has one whose figures cannot be read right now.
  */
 final readonly class AgentMetrics
 {
