@@ -12,7 +12,8 @@ use LIVCK\Cloud\Enums\Concerns\ToleratesUnknownValues;
  * Only `http`, `tcp`, `dns`, `icmp`, `ssl` and `manual` can be created through the API
  * (`ServiceBuilder` has one factory per type). The others exist on services that were set
  * up elsewhere and appear in lists: `heartbeat` (push monitoring), `statuspage` (a mirrored
- * third-party status page), `agent` (the server agent) and `push` (custom metrics).
+ * third-party status page), `agent` (a server that enrolled with an enrollment key, see
+ * `enrollmentKeys()`) and `push` (custom metrics).
  */
 enum CheckType: string implements ApiEnum
 {

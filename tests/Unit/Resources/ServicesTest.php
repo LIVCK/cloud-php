@@ -5,6 +5,14 @@ declare(strict_types=1);
 use LIVCK\Cloud\Builders\Conditions\HttpCondition;
 use LIVCK\Cloud\Builders\HttpAuth;
 use LIVCK\Cloud\Builders\ServiceBuilder;
+use LIVCK\Cloud\Data\AgentDisk;
+use LIVCK\Cloud\Data\AgentGpu;
+use LIVCK\Cloud\Data\AgentMetrics;
+use LIVCK\Cloud\Data\AgentMetricSeries;
+use LIVCK\Cloud\Data\AgentMetricsHistory;
+use LIVCK\Cloud\Data\AgentMetricStats;
+use LIVCK\Cloud\Data\AgentProbe;
+use LIVCK\Cloud\Data\AgentSmartDevice;
 use LIVCK\Cloud\Data\CheckResult;
 use LIVCK\Cloud\Data\CheckTypeCatalog;
 use LIVCK\Cloud\Data\Incident;
@@ -15,6 +23,8 @@ use LIVCK\Cloud\Data\ServiceMetrics;
 use LIVCK\Cloud\Data\ServiceSettings;
 use LIVCK\Cloud\Data\Tag;
 use LIVCK\Cloud\Data\UptimeDay;
+use LIVCK\Cloud\Enums\AgentMetricsRange;
+use LIVCK\Cloud\Enums\AgentState;
 use LIVCK\Cloud\Enums\CheckResultStatus;
 use LIVCK\Cloud\Enums\CheckType;
 use LIVCK\Cloud\Enums\HttpMethod;
@@ -34,6 +44,7 @@ use LIVCK\Cloud\Exceptions\NotFoundException;
 use LIVCK\Cloud\Exceptions\PermissionDeniedException;
 use LIVCK\Cloud\Exceptions\PlanLimitException;
 use LIVCK\Cloud\Exceptions\ServiceUnavailableException;
+use LIVCK\Cloud\Exceptions\UnexpectedResponseException;
 use LIVCK\Cloud\Exceptions\ValidationException;
 use LIVCK\Cloud\Pagination\CursorPage;
 use LIVCK\Cloud\Pagination\Page;
@@ -42,6 +53,7 @@ use LIVCK\Cloud\Query\CheckQuery;
 use LIVCK\Cloud\Query\MaintenanceQuery;
 use LIVCK\Cloud\Query\ServiceIncidentQuery;
 use LIVCK\Cloud\Query\ServiceQuery;
+use LIVCK\Cloud\Resources\ServicesInterface;
 use LIVCK\Cloud\Support\KeepSecret;
 use LIVCK\Cloud\Support\Uuid;
 use LIVCK\Cloud\Testing\MockResponse;
@@ -605,6 +617,261 @@ describe('responseTimes', function (): void {
             ->and($points[0]->avgMs)->toBe(151.7)
             ->and($points[0]->minMs)->toBe(95.0)
             ->and($points[0]->maxMs)->toBeNull();
+    });
+});
+
+describe('agent services', function (): void {
+    it('reads the server behind an agent service in a list', function (): void {
+        [$client] = fakeClient([MockResponse::page([ServiceFixtures::agentPayload(), ServiceFixtures::payload()])]);
+
+        $page = $client->services()->list();
+
+        expect($page->items[0]->checkType)->toBe(CheckType::Agent)
+            ->and($page->items[0]->agent?->state)->toBe(AgentState::Online)
+            ->and($page->items[0]->agent?->hostname)->toBe('web-1')
+            ->and($page->items[0]->isMonitoredByProbes())->toBeFalse()
+            ->and($page->items[1]->agent)->toBeNull();
+    });
+});
+
+describe('agentMetrics', function (): void {
+    it('reads the latest figures, keyed like the metric catalog', function (): void {
+        [$client, $http] = fakeClient([MockResponse::json(ServiceFixtures::agentMetrics())]);
+
+        $figures = $client->services()->agentMetrics(ServiceFixtures::AGENT_ID);
+
+        expect($figures)->toBeInstanceOf(AgentMetrics::class)
+            ->and(array_keys($figures->metrics))->toBe(ServiceFixtures::HOST_METRIC_KEYS)
+            ->and($figures->metrics['sys.cpu.total_pct'])->toBe(12.5)
+            ->and($figures->metric('sys.mem.used_pct'))->toBe(40.0)
+            ->and($figures->metric('sys.load.1'))->toBe(0.42)
+            ->and($figures->metric('sys.swap.used_pct'))->toBeNull()
+            ->and($figures->metric('sys.not.in.the.catalog'))->toBeNull()
+            ->and($figures->reportedAt?->format(DATE_ATOM))->toBe('2026-10-01T11:59:30+00:00')
+            ->and($figures->raw['metrics'])->toBe(ServiceFixtures::agentMetricsData()['metrics'])
+            ->and($figures->probes[1]->raw['metrics'])->toBe([]);
+
+        expect($figures->disks)->toHaveCount(1)
+            ->and($figures->disks[0])->toBeInstanceOf(AgentDisk::class)
+            ->and($figures->disks[0]->mount)->toBe('_root')
+            ->and($figures->disks[0]->metrics)->toBe(['total_bytes' => 107374182400.0, 'used_bytes' => 76235669504.0, 'used_pct' => 71.0])
+            ->and($figures->gpus[0])->toBeInstanceOf(AgentGpu::class)
+            ->and($figures->gpus[0]->id)->toBe('00000000_01_00.0')
+            ->and($figures->gpus[0]->name)->toBe('NVIDIA L4')
+            ->and($figures->gpus[0]->metrics)->toBe(['temp_c' => 54.0, 'util_pct' => 12.5])
+            ->and($figures->smart[0])->toBeInstanceOf(AgentSmartDevice::class)
+            ->and($figures->smart[0]->device)->toBe('nvme0n1')
+            ->and($figures->smart[0]->metrics['healthy'])->toBe(1.0);
+
+        $probe = $figures->probes[0];
+
+        expect($probe)->toBeInstanceOf(AgentProbe::class)
+            ->and($probe->id)->toBe('k3j9x2')
+            ->and($probe->label)->toBe('nginx')
+            ->and($probe->type)->toBe('tcp')
+            ->and($probe->target)->toBe('127.0.0.1')
+            ->and($probe->port)->toBe(443)
+            ->and($probe->up)->toBeTrue()
+            ->and($probe->metrics)->toBe(['latency_ms' => 0.4, 'up' => 1.0])
+            ->and($figures->probes[1]->port)->toBeNull()
+            ->and($figures->probes[1]->up)->toBeNull()
+            ->and($figures->probes[1]->metrics)->toBe([]);
+
+        $http->assertSent(fn(RecordedRequest $r): bool => $r->matches('GET', '/v1/services/' . ServiceFixtures::AGENT_ID . '/agent-metrics') && $r->queryString() === '');
+    });
+
+    it('reads a server that has not reported yet', function (): void {
+        [$client] = fakeClient([MockResponse::json(['data' => ServiceFixtures::agentMetricsBeforeFirstReport()])]);
+
+        $figures = $client->services()->agentMetrics(ServiceFixtures::AGENT_ID);
+
+        expect($figures->metric('sys.cpu.total_pct'))->toBeNull()
+            ->and($figures->disks)->toBe([])
+            ->and($figures->probes)->toBe([])
+            ->and($figures->reportedAt)->toBeNull();
+    });
+
+    it('accepts figures the metrics store wrote quoted, and refuses anything else', function (): void {
+        [$client] = fakeClient([
+            MockResponse::json(['data' => ServiceFixtures::agentMetricsData(['metrics' => ['sys.mem.total_bytes' => '17179869184']])]),
+            MockResponse::json(['data' => ServiceFixtures::agentMetricsData(['metrics' => ['sys.cpu.total_pct' => 'high']])]),
+            MockResponse::json(['data' => ServiceFixtures::agentMetricsData(['disks' => [['mount' => '_root', 'metrics' => ['used_pct' => null]]]])]),
+        ]);
+
+        expect($client->services()->agentMetrics(ServiceFixtures::AGENT_ID)->metric('sys.mem.total_bytes'))->toBe(17179869184.0)
+            ->and(fn(): AgentMetrics => $client->services()->agentMetrics(ServiceFixtures::AGENT_ID))
+            ->toThrow(UnexpectedResponseException::class, 'metrics.sys.cpu.total_pct')
+            ->and(fn(): AgentMetrics => $client->services()->agentMetrics(ServiceFixtures::AGENT_ID))
+            ->toThrow(UnexpectedResponseException::class, 'metrics.used_pct');
+    });
+
+    it('raises not found for a service that is no agent service', function (): void {
+        [$client] = singleShotClient([MockResponse::error('The requested resource was not found.', 404)]);
+
+        expect(fn(): AgentMetrics => $client->services()->agentMetrics(ServiceFixtures::ID))->toThrow(NotFoundException::class);
+    });
+
+    it('surfaces figures that cannot be read as service unavailable with the retry hint', function (): void {
+        [$client] = singleShotClient([MockResponse::error('Server metrics are temporarily unavailable.', 503)->withRetryAfter(30)]);
+
+        try {
+            $client->services()->agentMetrics(ServiceFixtures::AGENT_ID);
+            expect(false)->toBeTrue('a ServiceUnavailableException was expected');
+        } catch (ServiceUnavailableException $e) {
+            expect($e->retryAfter())->toBe(30)
+                ->and($e->errorMessage())->toBe('Server metrics are temporarily unavailable.');
+        }
+    });
+
+    it('waits as told and asks again while the figures are unavailable', function (): void {
+        [$client, $http] = fakeClient([
+            MockResponse::error('Server metrics are temporarily unavailable.', 503)->withRetryAfter(30),
+            MockResponse::json(ServiceFixtures::agentMetrics()),
+        ]);
+
+        $figures = $client->services()->agentMetrics(ServiceFixtures::AGENT_ID);
+
+        expect($figures->metric('sys.cpu.total_pct'))->toBe(12.5)
+            ->and($http->recorded())->toHaveCount(2)
+            ->and($http->delays())->toBe([30.0]);
+    });
+});
+
+describe('agentMetricsHistory', function (): void {
+    it('reads the buckets and the figures over the window, keyed like the metric catalog', function (): void {
+        [$client, $http] = fakeClient([MockResponse::json(ServiceFixtures::agentMetricsHistory())]);
+
+        $history = $client->services()->agentMetricsHistory(ServiceFixtures::AGENT_ID);
+
+        expect($history)->toBeInstanceOf(AgentMetricsHistory::class)
+            ->and($history->windowSeconds)->toBe(86400)
+            ->and(array_map(static fn(DateTimeImmutable $at): string => $at->format(DATE_ATOM), $history->timestamps))
+            ->toBe(['2026-10-01T09:00:00+00:00', '2026-10-01T09:06:00+00:00', '2026-10-01T09:12:00+00:00'])
+            ->and(array_keys($history->metrics))->toBe(['sys.cpu.total_pct', 'sys.disk._root.used_pct'])
+            ->and($history->metrics['sys.cpu.total_pct'])->toBeInstanceOf(AgentMetricSeries::class)
+            ->and($history->metrics['sys.cpu.total_pct']->avg)->toBe([12.5, 30.0, 18.25])
+            ->and($history->metrics['sys.cpu.total_pct']->max)->toBe([20.0, 64.5, 31.0])
+            ->and($history->metrics['sys.disk._root.used_pct']->avg)->toBe([null, 71.0, 71.2])
+            ->and($history->raw)->toBe(ServiceFixtures::agentMetricsHistoryData());
+
+        $cpu = $history->stats['sys.cpu.total_pct'] ?? null;
+
+        expect($cpu)->toBeInstanceOf(AgentMetricStats::class)
+            ->and($cpu?->last)->toBe(17.5)
+            ->and($cpu?->min)->toBe(3.25)
+            ->and($cpu?->avg)->toBe(20.25)
+            ->and($cpu?->max)->toBe(64.5)
+            ->and($cpu?->p50)->toBe(18.0)
+            ->and($cpu?->p95)->toBe(52.5)
+            ->and($cpu?->p99)->toBe(63.75)
+            ->and($cpu?->samples)->toBe(1440)
+            ->and($cpu?->hasData())->toBeTrue();
+
+        $http->assertSent(fn(RecordedRequest $r): bool => $r->matches('GET', '/v1/services/' . ServiceFixtures::AGENT_ID . '/agent-metrics/history')
+            && $r->query() === ['range' => '24h']);
+    });
+
+    it('sends the range and the keys, each once', function (): void {
+        [$client, $http] = fakeClient([MockResponse::json(ServiceFixtures::agentMetricsHistory(604800))]);
+
+        $client->services()->agentMetricsHistory(ServiceFixtures::AGENT_ID, AgentMetricsRange::SevenDays, 'sys.cpu.total_pct', 'sys.net.eth0.rx_bps', 'sys.cpu.total_pct');
+
+        expect($http->lastRequest()?->query())->toBe(['range' => '7d', 'keys' => ['sys.cpu.total_pct', 'sys.net.eth0.rx_bps']]);
+    });
+
+    it('reads an empty window and a key without samples', function (): void {
+        [$client] = fakeClient([MockResponse::json(['data' => [
+            'window_seconds' => 3600,
+            'timestamps' => [],
+            'metrics' => [],
+            'stats' => ['sys.swap.used_pct' => ['last' => null, 'min' => null, 'avg' => null, 'max' => null, 'p50' => null, 'p95' => null, 'p99' => null, 'samples' => '0']],
+        ]])]);
+
+        $history = $client->services()->agentMetricsHistory(ServiceFixtures::AGENT_ID, AgentMetricsRange::OneHour);
+        $swap = $history->stats['sys.swap.used_pct'] ?? null;
+
+        expect($history->timestamps)->toBe([])
+            ->and($history->metrics)->toBe([])
+            ->and($swap?->last)->toBeNull()
+            ->and($swap?->samples)->toBe(0)
+            ->and($swap?->hasData())->toBeFalse();
+    });
+
+    it('refuses blank keys, too many keys and an unrecognized range before anything is sent', function (Closure $call, string $message): void {
+        [$client, $http] = fakeClient();
+
+        expect(fn(): mixed => $call($client->services()))->toThrow(InvalidArgumentException::class, $message);
+        $http->assertNothingSent();
+    })->with([
+        'a blank key' => [fn(ServicesInterface $services): AgentMetricsHistory => $services->agentMetricsHistory(ServiceFixtures::AGENT_ID, AgentMetricsRange::OneHour, 'sys.cpu.total_pct', ' '), 'must not be blank'],
+        '101 keys' => [fn(ServicesInterface $services): AgentMetricsHistory => $services->agentMetricsHistory(
+            ServiceFixtures::AGENT_ID,
+            AgentMetricsRange::OneHour,
+            ...array_map(static fn(int $i): string => 'sys.disk.d' . $i . '.used_pct', range(1, 101)),
+        ), 'At most 100'],
+        'an unrecognized range' => [fn(ServicesInterface $services): AgentMetricsHistory => $services->agentMetricsHistory(ServiceFixtures::AGENT_ID, AgentMetricsRange::Unrecognized), 'Unrecognized'],
+    ]);
+
+    it('takes exactly 100 keys', function (): void {
+        [$client, $http] = fakeClient([MockResponse::json(ServiceFixtures::agentMetricsHistory())]);
+
+        $client->services()->agentMetricsHistory(ServiceFixtures::AGENT_ID, AgentMetricsRange::OneHour, ...array_map(static fn(int $i): string => 'sys.disk.d' . $i . '.used_pct', range(1, 100)));
+
+        $keys = $http->lastRequest()?->query()['keys'] ?? null;
+
+        expect(is_array($keys) ? count($keys) : 0)->toBe(100);
+    });
+
+    it('surfaces a key that is no server metric as a validation error on its entry', function (): void {
+        $message = 'The keys.1 must be a server metric key, e.g. sys.cpu.total_pct.';
+        [$client] = singleShotClient([MockResponse::error($message, 422, ['keys.1' => [$message]])]);
+
+        try {
+            $client->services()->agentMetricsHistory(ServiceFixtures::AGENT_ID, AgentMetricsRange::OneHour, 'sys.cpu.total_pct', 'sys.agent.version');
+            expect(false)->toBeTrue('a ValidationException was expected');
+        } catch (ValidationException $e) {
+            expect($e->firstError('keys.1'))->toBe($message)
+                ->and($e->hasError('keys.0'))->toBeFalse();
+        }
+    });
+
+    it('surfaces a range the server does not know as a validation error', function (): void {
+        [$client] = singleShotClient([MockResponse::error('The selected range is invalid.', 422, ['range' => ['The selected range is invalid.']])]);
+
+        expect(fn(): AgentMetricsHistory => $client->services()->agentMetricsHistory(ServiceFixtures::AGENT_ID, AgentMetricsRange::ThreeHundredSixtyFiveDays))
+            ->toThrow(ValidationException::class);
+    });
+
+    it('raises not found for a service that is no agent service, and unavailable figures with the retry hint', function (): void {
+        [$client] = singleShotClient([
+            MockResponse::error('The requested resource was not found.', 404),
+            MockResponse::error('Server metrics are temporarily unavailable.', 503)->withRetryAfter(30),
+        ]);
+
+        expect(fn(): AgentMetricsHistory => $client->services()->agentMetricsHistory(ServiceFixtures::ID))->toThrow(NotFoundException::class);
+
+        try {
+            $client->services()->agentMetricsHistory(ServiceFixtures::AGENT_ID);
+            expect(false)->toBeTrue('a ServiceUnavailableException was expected');
+        } catch (ServiceUnavailableException $e) {
+            expect($e->retryAfter())->toBe(30);
+        }
+    });
+
+    it('fails loudly on a bucket that is not a list or a timestamp that is not an instant', function (): void {
+        $drifts = [
+            'metrics.sys.cpu.total_pct' => ['metrics' => ['sys.cpu.total_pct' => 12.5]],
+            'avg[0]' => ['metrics' => ['sys.cpu.total_pct' => ['avg' => ['high'], 'max' => [1]]]],
+            'timestamps[0]' => ['timestamps' => ['yesterday']],
+            'samples' => ['stats' => ['sys.cpu.total_pct' => ['last' => 1, 'min' => 1, 'avg' => 1, 'max' => 1, 'p50' => 1, 'p95' => 1, 'p99' => 1, 'samples' => 1.5]]],
+        ];
+
+        foreach ($drifts as $field => $data) {
+            [$client] = fakeClient([MockResponse::json(['data' => ServiceFixtures::agentMetricsHistoryData($data)])]);
+
+            expect(fn(): AgentMetricsHistory => $client->services()->agentMetricsHistory(ServiceFixtures::AGENT_ID))
+                ->toThrow(UnexpectedResponseException::class, $field);
+        }
     });
 });
 

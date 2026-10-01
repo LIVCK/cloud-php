@@ -2,17 +2,22 @@
 
 declare(strict_types=1);
 
+use LIVCK\Cloud\Enums\AgentMetricsRange;
+use LIVCK\Cloud\Enums\AgentState;
 use LIVCK\Cloud\Enums\ApiEnum;
 use LIVCK\Cloud\Enums\CheckResultStatus;
 use LIVCK\Cloud\Enums\CheckType;
 use LIVCK\Cloud\Enums\ConditionOperator;
 use LIVCK\Cloud\Enums\ConditionOutcome;
 use LIVCK\Cloud\Enums\DnsRecordType;
+use LIVCK\Cloud\Enums\EnrollmentKeyStatus;
+use LIVCK\Cloud\Enums\EnrollmentKeyType;
 use LIVCK\Cloud\Enums\HttpAuthType;
 use LIVCK\Cloud\Enums\HttpMethod;
 use LIVCK\Cloud\Enums\IncidentKind;
 use LIVCK\Cloud\Enums\IncidentSeverity;
 use LIVCK\Cloud\Enums\IncidentStatus;
+use LIVCK\Cloud\Enums\IpFamily;
 use LIVCK\Cloud\Enums\IpVersion;
 use LIVCK\Cloud\Enums\MaintenanceStatus;
 use LIVCK\Cloud\Enums\MaintenanceType;
@@ -60,6 +65,11 @@ it('carries exactly the server\'s values and survives an unknown one', function 
     'MetricsRange' => [MetricsRange::class, ['1h', '6h', '24h', '7d', '30d']],
     'UptimeDayStatus' => [UptimeDayStatus::class, ['up', 'degraded', 'down', 'no_data']],
     'TokenType' => [TokenType::class, ['user', 'managed']],
+    'EnrollmentKeyType' => [EnrollmentKeyType::class, ['single', 'fleet']],
+    'EnrollmentKeyStatus' => [EnrollmentKeyStatus::class, ['active', 'exhausted', 'expired', 'revoked']],
+    'AgentState' => [AgentState::class, ['waiting', 'online', 'degraded', 'rebooting', 'updating', 'offline', 'stopped', 'archived', 'uninstalled']],
+    'IpFamily' => [IpFamily::class, ['v4', 'v6']],
+    'AgentMetricsRange' => [AgentMetricsRange::class, ['1h', '6h', '24h', '7d', '30d', '90d', '365d']],
 ]);
 
 it('answers the small questions the DTOs ask', function (): void {
@@ -75,5 +85,9 @@ it('answers the small questions the DTOs ask', function (): void {
         ->and(ServiceImpact::Degraded->countsAsDowntime())->toBeFalse()
         ->and(ServiceImpact::MajorOutage->countsAsDowntime())->toBeTrue()
         ->and(MaintenanceStatus::InProgress->isActive())->toBeTrue()
-        ->and(MaintenanceStatus::Cancelled->isActive())->toBeFalse();
+        ->and(MaintenanceStatus::Cancelled->isActive())->toBeFalse()
+        ->and(AgentState::Offline->isOutage())->toBeTrue()
+        ->and(AgentState::Stopped->isOutage())->toBeFalse()
+        ->and(AgentState::Rebooting->isOutage())->toBeFalse()
+        ->and(AgentState::Unrecognized->isOutage())->toBeFalse();
 });

@@ -9,6 +9,7 @@ use LIVCK\Cloud\Data\Me;
 use LIVCK\Cloud\Data\Probe;
 use LIVCK\Cloud\Http\Request;
 use LIVCK\Cloud\Http\Response;
+use LIVCK\Cloud\Resources\EnrollmentKeysInterface;
 use LIVCK\Cloud\Resources\IncidentsInterface;
 use LIVCK\Cloud\Resources\MaintenancesInterface;
 use LIVCK\Cloud\Resources\ServicesInterface;
@@ -50,6 +51,12 @@ interface CloudClientInterface
 
     /** Maintenance windows (read-only in this version). */
     public function maintenances(): MaintenancesInterface;
+
+    /**
+     * The keys servers enroll with to be monitored by the server agent, e.g. one per server of
+     * an end customer, carrying the customer's tag.
+     */
+    public function enrollmentKeys(): EnrollmentKeysInterface;
 
     /**
      * The calling token: type, abilities, organization and rate limit (`GET /v1/me`).

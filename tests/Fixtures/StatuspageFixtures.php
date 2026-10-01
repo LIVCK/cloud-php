@@ -64,6 +64,7 @@ final class StatuspageFixtures
             'show_unlinked_services' => false,
             'show_incident_history' => true,
             'status_json_includes_hidden' => false,
+            'seo' => self::seo(),
             'logo_url' => null,
             'logo_dark_url' => null,
             'favicon_url' => null,
@@ -74,6 +75,27 @@ final class StatuspageFixtures
             'components_count' => 2,
             'created_at' => '2026-09-05T05:42:06+00:00',
             'components' => [self::group(), self::component()],
+            ...$overrides,
+        ];
+    }
+
+    /**
+     * The search engine and link preview settings of a page, every default filled in; the
+     * texts are `{locale: text}` maps.
+     *
+     * @param array<string, mixed> $overrides
+     * @return array<string, mixed>
+     */
+    public static function seo(array $overrides = []): array
+    {
+        return [
+            'title' => ['de' => 'Acme Hosting Status', 'en' => 'Acme Hosting status'],
+            'description' => ['de' => 'Verfügbarkeit und Störungen von Acme Hosting'],
+            'image_subtitle' => ['de' => 'Live-Status'],
+            'image_appearance' => 'auto',
+            'indexable' => true,
+            'live_status' => true,
+            'event_images' => true,
             ...$overrides,
         ];
     }

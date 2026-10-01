@@ -13,6 +13,7 @@ use LIVCK\Cloud\Builders\Conditions\HttpCondition;
 use LIVCK\Cloud\Builders\Conditions\IcmpCondition;
 use LIVCK\Cloud\Builders\Conditions\SslCondition;
 use LIVCK\Cloud\Builders\Conditions\TcpCondition;
+use LIVCK\Cloud\Builders\EnrollmentKeyBuilder;
 use LIVCK\Cloud\Builders\HttpAuth;
 use LIVCK\Cloud\Builders\HttpServiceBuilder;
 use LIVCK\Cloud\Builders\ServiceBuilder;
@@ -21,10 +22,12 @@ use LIVCK\Cloud\Data\CheckTypeCatalog;
 use LIVCK\Cloud\Data\Service;
 use LIVCK\Cloud\Data\Tag;
 use LIVCK\Cloud\Enums\AccessType;
+use LIVCK\Cloud\Enums\AgentMetricsRange;
 use LIVCK\Cloud\Enums\AssetType;
 use LIVCK\Cloud\Enums\CheckResultStatus;
 use LIVCK\Cloud\Enums\ConditionOperator;
 use LIVCK\Cloud\Enums\DnsRecordType;
+use LIVCK\Cloud\Enums\EnrollmentKeyStatus;
 use LIVCK\Cloud\Enums\HttpMethod;
 use LIVCK\Cloud\Enums\IncidentKind;
 use LIVCK\Cloud\Enums\IpVersion;
@@ -41,6 +44,7 @@ use LIVCK\Cloud\Payloads\UpdateService;
 use LIVCK\Cloud\Payloads\UpdateStatuspage;
 use LIVCK\Cloud\Payloads\UpdateTag;
 use LIVCK\Cloud\Query\CheckQuery;
+use LIVCK\Cloud\Query\EnrollmentKeyQuery;
 use LIVCK\Cloud\Query\IncidentQuery;
 use LIVCK\Cloud\Query\MaintenanceQuery;
 use LIVCK\Cloud\Query\ServiceIncidentQuery;
@@ -53,6 +57,7 @@ use LIVCK\Cloud\Testing\MockResponse;
 use LIVCK\Cloud\Tests\Fixtures\CatalogFixture;
 use LIVCK\Cloud\Tests\Fixtures\CheckFixtures;
 use LIVCK\Cloud\Tests\Fixtures\DiscoveryFixtures;
+use LIVCK\Cloud\Tests\Fixtures\EnrollmentKeyFixtures;
 use LIVCK\Cloud\Tests\Fixtures\IncidentFixtures;
 use LIVCK\Cloud\Tests\Fixtures\MaintenanceFixtures;
 use LIVCK\Cloud\Tests\Fixtures\ServiceFixtures;
@@ -61,8 +66,8 @@ use LIVCK\Cloud\Tests\Fixtures\StatuspageFixtures;
 /**
  * Every public resource method of the SDK, called once with typical arguments: every
  * ServiceBuilder factory with its options and condition families, the update payloads,
- * the component kinds, the status page payloads, the tag calls, the lookups, and every
- * creating method once more with a caller-supplied Idempotency-Key. The request contract
+ * the component kinds, the status page payloads, the tag calls, the lookups, the enrollment
+ * key kinds, and every creating method once more with a caller-supplied Idempotency-Key. The request contract
  * test checks what each call sends; the coverage test checks which operations they reach.
  */
 final class SdkCalls
@@ -101,6 +106,7 @@ final class SdkCalls
             ...self::statuspages(),
             ...self::components(),
             ...self::customDomains(),
+            ...self::enrollmentKeys(),
         ] as $call) {
             $calls[$call->name] = $call;
         }
@@ -213,6 +219,15 @@ final class SdkCalls
                     ->withPage(1)
                     ->withPerPage(20),
             )),
+            new SdkCall('services.agentMetrics', [MockResponse::json(ServiceFixtures::agentMetrics())], static fn(CloudClient $client): mixed => $client->services()->agentMetrics(ServiceFixtures::AGENT_ID)),
+            new SdkCall('services.agentMetricsHistory', [MockResponse::json(ServiceFixtures::agentMetricsHistory(604800))], static fn(CloudClient $client): mixed => $client->services()->agentMetricsHistory(
+                ServiceFixtures::AGENT_ID,
+                AgentMetricsRange::SevenDays,
+                'sys.cpu.total_pct',
+                'sys.disk._root.used_pct',
+            )),
+            new SdkCall('services.agentMetricsHistory.default', [MockResponse::json(ServiceFixtures::agentMetricsHistory())], static fn(CloudClient $client): mixed => $client->services()->agentMetricsHistory(ServiceFixtures::AGENT_ID)),
+            new SdkCall('services.agentMetricsHistory.year', [MockResponse::json(ServiceFixtures::agentMetricsHistory(31536000))], static fn(CloudClient $client): mixed => $client->services()->agentMetricsHistory(ServiceFixtures::AGENT_ID, AgentMetricsRange::ThreeHundredSixtyFiveDays)),
             new SdkCall('services.maintenances', [MockResponse::page([MaintenanceFixtures::payload()])], static fn(CloudClient $client): mixed => $client->services()->maintenances($id)),
             new SdkCall('services.maintenances.filtered', [MockResponse::page([MaintenanceFixtures::payload()])], static fn(CloudClient $client): mixed => $client->services()->maintenances(
                 $id,
@@ -623,6 +638,43 @@ final class SdkCalls
             new SdkCall('customDomains.verify', [self::item(StatuspageFixtures::activeDomain())], static fn(CloudClient $client): mixed => $client->statuspages()->customDomains(self::PAGE_ID)->verify($domainId)),
             new SdkCall('customDomains.detach', [MockResponse::noContent()], static function (CloudClient $client) use ($domainId): void {
                 $client->statuspages()->customDomains(self::PAGE_ID)->detach($domainId);
+            }),
+        ];
+    }
+
+    /**
+     * @return list<SdkCall>
+     */
+    private static function enrollmentKeys(): array
+    {
+        $key = EnrollmentKeyFixtures::payload();
+        $created = self::item(EnrollmentKeyFixtures::created(), 201);
+        $id = EnrollmentKeyFixtures::ID;
+        $expiresAt = new DateTimeImmutable('2026-10-03T12:00:00Z');
+
+        $create = static fn(string $name, EnrollmentKeyBuilder $builder, ?string $idempotencyKey = null): SdkCall => new SdkCall(
+            'enrollmentKeys.create.' . $name,
+            [$created],
+            static fn(CloudClient $client): mixed => $client->enrollmentKeys()->create($builder, $idempotencyKey),
+        );
+
+        return [
+            new SdkCall('enrollmentKeys.list', [MockResponse::page([$key])], static fn(CloudClient $client): mixed => $client->enrollmentKeys()->list()),
+            new SdkCall('enrollmentKeys.list.filtered', [MockResponse::page([$key])], static fn(CloudClient $client): mixed => $client->enrollmentKeys()->list(
+                EnrollmentKeyQuery::make()->withStatuses(EnrollmentKeyStatus::Active, EnrollmentKeyStatus::Exhausted)->withPage(2)->withPerPage(25),
+            )),
+            new SdkCall('enrollmentKeys.each', [MockResponse::page([$key])], static fn(CloudClient $client): mixed => iterator_to_array($client->enrollmentKeys()->each(), false)),
+            new SdkCall('enrollmentKeys.get', [self::item(EnrollmentKeyFixtures::exhausted())], static fn(CloudClient $client): mixed => $client->enrollmentKeys()->get($id)),
+            $create('defaults', EnrollmentKeyBuilder::single()),
+            $create('single', EnrollmentKeyBuilder::single('Customer 4711')
+                ->tags(self::TAG_ID, Tag::fromArray(tagPayload(['id' => 'W2TuHYS9a6keIj7CnzU12'])), 'customer:4711', 'env=prod')
+                ->expiresAt($expiresAt)
+                ->allowAgentTags(false)),
+            $create('fleet', EnrollmentKeyBuilder::fleet('Web servers', 200)->expiresAt($expiresAt)->allowAgentTags()),
+            $create('fleetDefaults', EnrollmentKeyBuilder::fleet()),
+            $create('withKey', EnrollmentKeyBuilder::single('Customer 4711'), 'order-4711-server-1'),
+            new SdkCall('enrollmentKeys.revoke', [MockResponse::noContent()], static function (CloudClient $client) use ($id): void {
+                $client->enrollmentKeys()->revoke($id);
             }),
         ];
     }

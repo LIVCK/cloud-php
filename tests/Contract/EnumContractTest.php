@@ -10,6 +10,8 @@ use LIVCK\Cloud\Enums\ComponentStatus;
 use LIVCK\Cloud\Enums\ConditionOperator;
 use LIVCK\Cloud\Enums\ConditionOutcome;
 use LIVCK\Cloud\Enums\DnsRecordType;
+use LIVCK\Cloud\Enums\EnrollmentKeyStatus;
+use LIVCK\Cloud\Enums\EnrollmentKeyType;
 use LIVCK\Cloud\Enums\HttpAuthType;
 use LIVCK\Cloud\Enums\HttpMethod;
 use LIVCK\Cloud\Enums\IncidentKind;
@@ -97,6 +99,9 @@ describe('enum values', function (): void {
         'ConditionOutcome' => [ConditionOutcome::class, '/components/schemas/ServiceCondition/properties/status'],
         'StatusOverride' => [StatusOverride::class, '/components/schemas/ApplyStatusOverrideRequest/properties/status'],
         'ProbeRole' => [ProbeRole::class, '/components/schemas/StoreServiceRequest/properties/settings/properties/probe_roles/additionalProperties'],
+        'EnrollmentKeyType' => [EnrollmentKeyType::class, '/components/schemas/EnrollmentTokenType'],
+        'EnrollmentKeyType (as a key reports it)' => [EnrollmentKeyType::class, '/components/schemas/EnrollmentKeyResource/properties/type'],
+        'EnrollmentKeyStatus' => [EnrollmentKeyStatus::class, '/components/schemas/EnrollmentTokenStatus'],
     ]);
 
     it('match the query parameter enums of the document', function (string $enum, string $operation, string $parameter): void {

@@ -4,6 +4,25 @@ All notable changes to this package are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Enrollment keys, the credentials a server enrolls with: `enrollmentKeys()` lists them (by
+  status), reads, creates and revokes them. `EnrollmentKeyBuilder::single()` and `::fleet()`
+  take a name, tags by id or by name, an expiry, a use cap for a fleet and whether the install
+  may add tags of its own. The new key and its install command come as `Support\Secret`, which
+  no dump, log line or JSON shows and which refuses to be serialized.
+- `Service::$agent`: the server behind an `agent` service, with its state, host facts,
+  addresses, update settings and the key it enrolled with; null for every other service.
+- `services()->agentMetrics()` and `services()->agentMetricsHistory()`: a server's latest
+  figures and their course over a range (`AgentMetricsRange`), keyed by the metric catalog.
+
+### Changed
+
+- `CloudClientInterface` has `enrollmentKeys()` and `ServicesInterface` has `agentMetrics()` and
+  `agentMetricsHistory()`; a class of your own that implements either interface needs them.
+
 ## [1.1.0] - 2026-09-28
 
 ### Added

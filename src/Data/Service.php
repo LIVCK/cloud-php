@@ -18,7 +18,8 @@ use LIVCK\Cloud\Support\Field;
  * the manual override while one is set. A monitored service created without `settings`
  * exists but is not monitored (`isConfigured` false, `settings` null) until it gets some; a
  * `manual` service has nothing to configure and is configured from the start, with
- * `settings` null.
+ * `settings` null. An `agent` service is a server that enrolled with an enrollment key;
+ * `agent` describes it.
  */
 final readonly class Service
 {
@@ -32,6 +33,9 @@ final readonly class Service
      * @param DateTimeImmutable|null $lastCheckAt null before the first check
      * @param ServiceSettings|null $settings null while the service is not configured
      * @param array<string, mixed> $raw the payload as received, for fields the SDK does not map yet
+     * @param ServiceAgent|null $agent the server behind an `agent` service; null for every other check type. It
+     *                                 follows `$raw` so that constructor calls written for earlier versions
+     *                                 keep working.
      */
     public function __construct(
         public string $id,
@@ -56,6 +60,7 @@ final readonly class Service
         public DateTimeImmutable $createdAt,
         public ?ServiceSettings $settings,
         public array $raw,
+        public ?ServiceAgent $agent = null,
     ) {}
 
     /**
@@ -66,6 +71,7 @@ final readonly class Service
         $override = Field::nullableString($data, 'status_override');
         $pausedReason = Field::nullableString($data, 'paused_reason');
         $settings = Field::nullableObject($data, 'settings');
+        $agent = Field::nullableObject($data, 'agent');
 
         return new self(
             Field::string($data, 'id'),
@@ -90,6 +96,7 @@ final readonly class Service
             Field::instant($data, 'created_at'),
             $settings === null ? null : ServiceSettings::fromArray($settings),
             $data,
+            $agent === null ? null : ServiceAgent::fromArray($agent),
         );
     }
 

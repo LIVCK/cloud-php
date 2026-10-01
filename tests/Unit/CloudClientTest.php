@@ -205,7 +205,9 @@ describe('immutability', function (): void {
         [$client] = fakeClient();
 
         expect($client->tags())->toBe($client->tags())
-            ->and($client->withLocale('en')->tags())->not->toBe($client->tags());
+            ->and($client->withLocale('en')->tags())->not->toBe($client->tags())
+            ->and($client->enrollmentKeys())->toBe($client->enrollmentKeys())
+            ->and($client->withLocale('en')->enrollmentKeys())->not->toBe($client->enrollmentKeys());
     });
 
     it('accepts a BearerToken instance as well as a string', function (): void {

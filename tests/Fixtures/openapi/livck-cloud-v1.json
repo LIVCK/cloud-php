@@ -376,6 +376,134 @@
                 "title": "ConditionSeverity",
                 "type": "string"
             },
+            "CreatedEnrollmentKeyResource": {
+                "properties": {
+                    "agent_tags": {
+                        "description": "Whether a server may add tags of its own at install (`--tag`). They only ever add to\nthe key's tags. Always false in a reseller organization.",
+                        "type": "boolean"
+                    },
+                    "created_at": {
+                        "type": "string"
+                    },
+                    "expires_at": {
+                        "description": "When the key stops working (ISO 8601).",
+                        "type": "string"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "install_command": {
+                        "description": "Run once on the server, as root. Installs the agent and enrolls it with this key.",
+                        "type": "string"
+                    },
+                    "max_uses": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "revoked_at": {
+                        "description": "When the key was revoked (ISO 8601); null while it was not.",
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "services": {
+                        "description": "The servers enrolled with this key, newest first, at most 25; `uses` counts every\nenrollment. A server you cannot see (access areas) is left out.",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "name": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "id",
+                                "name"
+                            ],
+                            "type": "object"
+                        },
+                        "type": "array"
+                    },
+                    "status": {
+                        "description": "`active` while it can still enroll a server; otherwise why not, in this order: `revoked`,\n`expired`, `exhausted` (every use taken). Dead keys are deleted 30 days after creation.",
+                        "type": "string"
+                    },
+                    "tags": {
+                        "description": "Every server enrolled with this key gets these tags; the server cannot replace them.",
+                        "items": {
+                            "properties": {
+                                "color": {
+                                    "type": "string"
+                                },
+                                "id": {
+                                    "type": "string"
+                                },
+                                "key": {
+                                    "type": "string"
+                                },
+                                "label": {
+                                    "type": "string"
+                                },
+                                "value": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "id",
+                                "key",
+                                "value",
+                                "color",
+                                "label"
+                            ],
+                            "type": "object"
+                        },
+                        "type": "array"
+                    },
+                    "token": {
+                        "description": "The key, shown this once and never again. Only its hash is stored.",
+                        "type": "string"
+                    },
+                    "token_prefix": {
+                        "description": "The first characters of the key, to tell keys apart. The key itself is only in the\nresponse that created it.",
+                        "type": "string"
+                    },
+                    "type": {
+                        "description": "`single` enrolls exactly one server, `fleet` up to `max_uses` servers.",
+                        "enum": [
+                            "fleet",
+                            "single"
+                        ],
+                        "type": "string"
+                    },
+                    "uses": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "id",
+                    "type",
+                    "name",
+                    "token_prefix",
+                    "agent_tags",
+                    "uses",
+                    "max_uses",
+                    "expires_at",
+                    "revoked_at",
+                    "status",
+                    "created_at",
+                    "token",
+                    "install_command"
+                ],
+                "title": "CreatedEnrollmentKeyResource",
+                "type": "object"
+            },
             "CustomDomainResource": {
                 "properties": {
                     "cname_target": {
@@ -533,6 +661,144 @@
                 ],
                 "title": "EnrollAgentRequest",
                 "type": "object"
+            },
+            "EnrollmentKeyResource": {
+                "properties": {
+                    "agent_tags": {
+                        "description": "Whether a server may add tags of its own at install (`--tag`). They only ever add to\nthe key's tags. Always false in a reseller organization.",
+                        "type": "boolean"
+                    },
+                    "created_at": {
+                        "type": "string"
+                    },
+                    "expires_at": {
+                        "description": "When the key stops working (ISO 8601).",
+                        "type": "string"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "max_uses": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "revoked_at": {
+                        "description": "When the key was revoked (ISO 8601); null while it was not.",
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "services": {
+                        "description": "The servers enrolled with this key, newest first, at most 25; `uses` counts every\nenrollment. A server you cannot see (access areas) is left out.",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "name": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "id",
+                                "name"
+                            ],
+                            "type": "object"
+                        },
+                        "type": "array"
+                    },
+                    "status": {
+                        "description": "`active` while it can still enroll a server; otherwise why not, in this order: `revoked`,\n`expired`, `exhausted` (every use taken). Dead keys are deleted 30 days after creation.",
+                        "type": "string"
+                    },
+                    "tags": {
+                        "description": "Every server enrolled with this key gets these tags; the server cannot replace them.",
+                        "items": {
+                            "properties": {
+                                "color": {
+                                    "type": "string"
+                                },
+                                "id": {
+                                    "type": "string"
+                                },
+                                "key": {
+                                    "type": "string"
+                                },
+                                "label": {
+                                    "type": "string"
+                                },
+                                "value": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "id",
+                                "key",
+                                "value",
+                                "color",
+                                "label"
+                            ],
+                            "type": "object"
+                        },
+                        "type": "array"
+                    },
+                    "token_prefix": {
+                        "description": "The first characters of the key, to tell keys apart. The key itself is only in the\nresponse that created it.",
+                        "type": "string"
+                    },
+                    "type": {
+                        "description": "`single` enrolls exactly one server, `fleet` up to `max_uses` servers.",
+                        "enum": [
+                            "fleet",
+                            "single"
+                        ],
+                        "type": "string"
+                    },
+                    "uses": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "id",
+                    "type",
+                    "name",
+                    "token_prefix",
+                    "agent_tags",
+                    "uses",
+                    "max_uses",
+                    "expires_at",
+                    "revoked_at",
+                    "status",
+                    "created_at"
+                ],
+                "title": "EnrollmentKeyResource",
+                "type": "object"
+            },
+            "EnrollmentTokenStatus": {
+                "description": "`active` while a key can still enroll a server. Otherwise why not, in this order: `revoked`, `expired`, `exhausted` (every use taken). A revoked key that has also expired is `revoked`.\n",
+                "enum": [
+                    "active",
+                    "exhausted",
+                    "expired",
+                    "revoked"
+                ],
+                "title": "EnrollmentTokenStatus",
+                "type": "string"
+            },
+            "EnrollmentTokenType": {
+                "description": "`single` enrolls exactly one server: the key in the install command for one machine. `fleet` enrolls up to `max_uses` servers with one key, for images, cloud-init or configuration management.\n",
+                "enum": [
+                    "single",
+                    "fleet"
+                ],
+                "title": "EnrollmentTokenType",
+                "type": "string"
             },
             "EnsureTagRequest": {
                 "description": "Same body and rules as `POST /v1/tags`, but an existing key/value pair is not an error: that\ntag is returned unchanged with 200.",
@@ -741,6 +1007,16 @@
                 },
                 "title": "IcmpConfig",
                 "type": "object"
+            },
+            "ImageAppearance": {
+                "description": "Color scheme of the link preview image: `auto` (the default) lets the image follow the page, `light` and `dark` fix it.\n",
+                "enum": [
+                    "auto",
+                    "light",
+                    "dark"
+                ],
+                "title": "ImageAppearance",
+                "type": "string"
             },
             "IncidentResource": {
                 "properties": {
@@ -1594,6 +1870,216 @@
                 "title": "RotationType",
                 "type": "string"
             },
+            "ServiceAgentResource": {
+                "properties": {
+                    "arch": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "booted_at": {
+                        "description": "When the host last booted (ISO 8601).",
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "cpu_cores": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "cpu_model": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "distro": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "distro_version": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "enrollment_key_id": {
+                        "description": "The enrollment key the server enrolled with; null for older servers and once the key\nhas been deleted.",
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "hostname": {
+                        "type": "string"
+                    },
+                    "instance_conflict_at": {
+                        "description": "Set when a second host reported with this agent's identity (a cloned machine).",
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "ips": {
+                        "properties": {
+                            "observed": {
+                                "description": "The address LIVCK sees the agent call from, per IP family. Behind NAT this is the\nnetwork's address, not the host's.",
+                                "items": {
+                                    "properties": {
+                                        "at": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        },
+                                        "family": {
+                                            "type": "string"
+                                        },
+                                        "ip": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "ip",
+                                        "family",
+                                        "at"
+                                    ],
+                                    "type": "object"
+                                },
+                                "type": "array"
+                            },
+                            "private": {
+                                "description": "Addresses the host reports for itself, at enrollment.",
+                                "items": {},
+                                "type": "array"
+                            },
+                            "public": {
+                                "items": {},
+                                "type": "array"
+                            }
+                        },
+                        "required": [
+                            "private",
+                            "public",
+                            "observed"
+                        ],
+                        "type": "object"
+                    },
+                    "kernel": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "last_seen_at": {
+                        "description": "When the agent last reported (ISO 8601); null before its first report.",
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "os": {
+                        "description": "Host facts the agent reports; null until it has.",
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "ram_total_bytes": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "reboot_required": {
+                        "description": "True when the operating system asks for a reboot (pending updates).",
+                        "type": "boolean"
+                    },
+                    "state": {
+                        "description": "`waiting` until the first report, then `online`, `degraded`, `rebooting`, `updating`,\n`offline`, `stopped`, `archived` or `uninstalled`.",
+                        "type": "string"
+                    },
+                    "state_changed_at": {
+                        "description": "When the state last changed (ISO 8601).",
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "update": {
+                        "properties": {
+                            "automatic": {
+                                "description": "Whether the agent updates itself.",
+                                "type": "boolean"
+                            },
+                            "available_version": {
+                                "description": "The version the agent is meant to move to; null when it runs it already.",
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "window_end": {
+                                "type": "string"
+                            },
+                            "window_start": {
+                                "description": "The host-local window (HH:MM) automatic updates run in.",
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "automatic",
+                            "window_start",
+                            "window_end",
+                            "available_version"
+                        ],
+                        "type": "object"
+                    },
+                    "version": {
+                        "description": "The agent's version.",
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "virtualization": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "state",
+                    "state_changed_at",
+                    "last_seen_at",
+                    "hostname",
+                    "version",
+                    "os",
+                    "distro",
+                    "distro_version",
+                    "kernel",
+                    "arch",
+                    "virtualization",
+                    "cpu_model",
+                    "cpu_cores",
+                    "ram_total_bytes",
+                    "booted_at",
+                    "reboot_required",
+                    "ips",
+                    "update",
+                    "instance_conflict_at",
+                    "enrollment_key_id"
+                ],
+                "title": "ServiceAgentResource",
+                "type": "object"
+            },
             "ServiceCondition": {
                 "additionalProperties": false,
                 "description": "A status rule applied to a check result. The valid `field` and `operator` combinations depend on the check type (and subtype, e.g. DNS record type) — fetch the matrix from GET /v1/meta/check-types.",
@@ -1857,6 +2343,17 @@
             },
             "ServiceResource": {
                 "properties": {
+                    "agent": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/ServiceAgentResource",
+                                "description": "The server behind an `agent` service: state, host facts, update settings. Null for\nevery other check type. Current figures: GET /v1/services/{id}/agent-metrics."
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
                     "avg_response_ms": {
                         "description": "Average response time over the last 30 days in milliseconds; null when nothing\nwas measured.",
                         "type": [
@@ -2433,6 +2930,51 @@
                             "null"
                         ]
                     },
+                    "seo": {
+                        "description": "Search engine and link preview settings, with every default filled in. `title`,\n`description` and `image_subtitle` are `{locale: text}` objects, `{}` when not set.\nA text in a language the page no longer offers stays stored and applies again when\nthe language returns; it may be sent back unchanged.",
+                        "properties": {
+                            "description": {
+                                "additionalProperties": {
+                                    "type": "string"
+                                },
+                                "type": "object"
+                            },
+                            "event_images": {
+                                "type": "boolean"
+                            },
+                            "image_appearance": {
+                                "$ref": "#/components/schemas/ImageAppearance"
+                            },
+                            "image_subtitle": {
+                                "additionalProperties": {
+                                    "type": "string"
+                                },
+                                "type": "object"
+                            },
+                            "indexable": {
+                                "type": "boolean"
+                            },
+                            "live_status": {
+                                "type": "boolean"
+                            },
+                            "title": {
+                                "additionalProperties": {
+                                    "type": "string"
+                                },
+                                "type": "object"
+                            }
+                        },
+                        "required": [
+                            "title",
+                            "description",
+                            "image_subtitle",
+                            "image_appearance",
+                            "indexable",
+                            "live_status",
+                            "event_images"
+                        ],
+                        "type": "object"
+                    },
                     "show_affected_services": {
                         "type": "boolean"
                     },
@@ -2501,6 +3043,7 @@
                     "show_unlinked_services",
                     "show_incident_history",
                     "status_json_includes_hidden",
+                    "seo",
                     "logo_url",
                     "logo_dark_url",
                     "favicon_url",
@@ -2614,6 +3157,54 @@
                     "severity"
                 ],
                 "title": "StoreAgentConditionRequest",
+                "type": "object"
+            },
+            "StoreEnrollmentKeyRequest": {
+                "description": "Creates an enrollment key: the credential the install command gives a server so it enrolls with\nyour organization. The key is in the response, once.",
+                "properties": {
+                    "agent_tags": {
+                        "description": "Whether a server may add tags of its own at install (`--tag`). They only ever add to\nthe key's tags. True by default; a reseller organization cannot set it.",
+                        "type": "boolean"
+                    },
+                    "expires_at": {
+                        "description": "When the key stops working. `single`: 24 hours by default, at most 7 days. `fleet`:\n90 days by default, at most 365 days.",
+                        "format": "date-time",
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "max_uses": {
+                        "description": "`fleet` only: how many servers may enroll, 1 to 10000 (50 by default). A `single` key\nalways enrolls exactly one.",
+                        "maximum": 10000,
+                        "minimum": 1,
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "name": {
+                        "description": "Shown in the console and in the key list.",
+                        "maxLength": 100,
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "tags": {
+                        "description": "Tag ids (from GET /v1/tags) or tag names, in any mix, as for services. Every server\nenrolled with this key gets them, and the server cannot replace them. A tag that\nsyncs a status page group is rejected.",
+                        "items": {
+                            "type": "string"
+                        },
+                        "maxItems": 50,
+                        "type": "array"
+                    },
+                    "type": {
+                        "$ref": "#/components/schemas/EnrollmentTokenType",
+                        "description": "`single` (the default) enrolls exactly one server. `fleet` enrolls up to `max_uses`\nservers, for images, cloud-init or configuration management."
+                    }
+                },
+                "title": "StoreEnrollmentKeyRequest",
                 "type": "object"
             },
             "StoreIncidentRequest": {
@@ -4076,6 +4667,67 @@
                             "null"
                         ]
                     },
+                    "seo": {
+                        "description": "Search engine and link preview settings. Sending `seo` replaces all of them: a field\nyou leave out goes back to its default, an unknown field is rejected. Leave `seo`\nout to keep the stored settings.",
+                        "properties": {
+                            "description": {
+                                "additionalProperties": {
+                                    "maxLength": 160,
+                                    "pattern": "^[^\\x00-\\x1F\\x7F]*$",
+                                    "type": "string"
+                                },
+                                "description": "Meta description for search results and link previews, as a `{locale: text}`\nobject. Otherwise like `title`.",
+                                "maxProperties": 2,
+                                "type": [
+                                    "object",
+                                    "null"
+                                ]
+                            },
+                            "event_images": {
+                                "description": "Whether incidents and maintenances get their own link preview image. Default `true`.",
+                                "type": "boolean"
+                            },
+                            "image_appearance": {
+                                "$ref": "#/components/schemas/ImageAppearance",
+                                "description": "Color scheme of the link preview image. Default `auto`."
+                            },
+                            "image_subtitle": {
+                                "additionalProperties": {
+                                    "maxLength": 90,
+                                    "pattern": "^[^\\x00-\\x1F\\x7F]*$",
+                                    "type": "string"
+                                },
+                                "description": "Subtitle printed into the link preview image, as a `{locale: text}` object.\nOtherwise like `title`.",
+                                "maxProperties": 2,
+                                "type": [
+                                    "object",
+                                    "null"
+                                ]
+                            },
+                            "indexable": {
+                                "description": "Whether search engines may index the page. Default `true`. A page with a password\nor an e-mail allowlist is never indexed, whatever this says.",
+                                "type": "boolean"
+                            },
+                            "live_status": {
+                                "description": "Whether the link preview image shows the current overall status. Default `true`.",
+                                "type": "boolean"
+                            },
+                            "title": {
+                                "additionalProperties": {
+                                    "maxLength": 70,
+                                    "pattern": "^[^\\x00-\\x1F\\x7F]*$",
+                                    "type": "string"
+                                },
+                                "description": "Page title for search results and link previews, as a `{locale: text}` object such\nas `{\"de\": \"…\", \"en\": \"…\"}`. Only languages the page offers after this update. `{}`\nor `null` removes the custom title.",
+                                "maxProperties": 2,
+                                "type": [
+                                    "object",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "type": "object"
+                    },
                     "show_affected_services": {
                         "type": "boolean"
                     },
@@ -4678,6 +5330,327 @@
                 },
                 "tags": [
                     "AgentToken"
+                ]
+            }
+        },
+        "/enrollment-keys": {
+            "get": {
+                "operationId": "v1.enrollment-keys.index",
+                "parameters": [
+                    {
+                        "description": "Only keys in these states: `active`, `exhausted`, `expired`, `revoked`. Repeat as\n`status[]=` or pass a comma-separated list (`status=exhausted,expired`). An unknown\nstate is rejected (422). Absent or empty → every key.",
+                        "example": "active",
+                        "in": "query",
+                        "name": "status[]",
+                        "schema": {
+                            "items": {
+                                "$ref": "#/components/schemas/EnrollmentTokenStatus"
+                            },
+                            "type": "array"
+                        }
+                    },
+                    {
+                        "description": "Results per page (default 50, min 1, max 100; out-of-range values are clamped).",
+                        "example": 50,
+                        "in": "query",
+                        "name": "per_page",
+                        "schema": {
+                            "default": 50,
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "description": "Page number, starting at 1. The response links to the other pages.",
+                        "example": 2,
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "default": 1,
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "items": {
+                                                "$ref": "#/components/schemas/EnrollmentKeyResource"
+                                            },
+                                            "type": "array"
+                                        },
+                                        "links": {
+                                            "properties": {
+                                                "first": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "last": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "next": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "prev": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "first",
+                                                "last",
+                                                "prev",
+                                                "next"
+                                            ],
+                                            "type": "object"
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "minimum": 1,
+                                                    "type": "integer"
+                                                },
+                                                "from": {
+                                                    "minimum": 1,
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "last_page": {
+                                                    "minimum": 1,
+                                                    "type": "integer"
+                                                },
+                                                "links": {
+                                                    "description": "Generated paginator links.",
+                                                    "items": {
+                                                        "properties": {
+                                                            "active": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "label": {
+                                                                "type": "string"
+                                                            },
+                                                            "url": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "url",
+                                                            "label",
+                                                            "active"
+                                                        ],
+                                                        "type": "object"
+                                                    },
+                                                    "type": "array"
+                                                },
+                                                "path": {
+                                                    "description": "Base path for paginator generated URLs.",
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "per_page": {
+                                                    "description": "Number of items shown per page.",
+                                                    "minimum": 0,
+                                                    "type": "integer"
+                                                },
+                                                "to": {
+                                                    "description": "Number of the last item in the slice.",
+                                                    "minimum": 1,
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "total": {
+                                                    "description": "Total number of items being paginated.",
+                                                    "minimum": 0,
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "current_page",
+                                                "from",
+                                                "last_page",
+                                                "links",
+                                                "path",
+                                                "per_page",
+                                                "to",
+                                                "total"
+                                            ],
+                                            "type": "object"
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "links",
+                                        "meta"
+                                    ],
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "Paginated set of `EnrollmentKeyResource`"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                },
+                "summary": "List enrollment keys (paginated), newest first",
+                "tags": [
+                    "EnrollmentKey"
+                ]
+            },
+            "post": {
+                "description": "The response carries the key (`token`) and the ready-to-run `install_command`, this once.\nStore neither: create a new key whenever a server is to be added. A server enrolls with\n`POST /v1/agents/enroll` through the installer, never with your API token.",
+                "operationId": "v1.enrollment-keys.store",
+                "parameters": [
+                    {
+                        "description": "Optional. Makes the request safe to retry: repeating it with the same key and the same payload within 24 hours returns the stored response (`Idempotent-Replayed: true`) instead of running the action again. 1–255 visible ASCII characters (a UUID works well), scoped to the API token. `409` with `Retry-After` while the first request is still running, `422` when the key is reused with a different payload, `400` for a malformed key. Only `2xx` responses are stored; after an error the key may be reused.",
+                        "example": "0d1f1c1e-6f1a-4d1e-9d5a-1b2c3d4e5f60",
+                        "in": "header",
+                        "name": "Idempotency-Key",
+                        "schema": {
+                            "maxLength": 255,
+                            "minLength": 1,
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreEnrollmentKeyRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/CreatedEnrollmentKeyResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "`CreatedEnrollmentKeyResource`"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ],
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "The token lacks `agents.manage`, or server monitoring is switched off for the organization."
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                },
+                "summary": "Create an enrollment key",
+                "tags": [
+                    "EnrollmentKey"
+                ]
+            }
+        },
+        "/enrollment-keys/{key}": {
+            "delete": {
+                "description": "It enrolls no further server; servers already enrolled with it keep running. Revoking a\nrevoked key changes nothing.",
+                "operationId": "v1.enrollment-keys.destroy",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "key",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    }
+                },
+                "summary": "Revoke an enrollment key",
+                "tags": [
+                    "EnrollmentKey"
+                ]
+            },
+            "get": {
+                "description": "Poll this after handing out the install command: `status` turns `exhausted` once a\n`single` key is used, and `services` names the server.",
+                "operationId": "v1.enrollment-keys.show",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "key",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/EnrollmentKeyResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "`EnrollmentKeyResource`"
+                    }
+                },
+                "summary": "Get an enrollment key, with the servers enrolled with it",
+                "tags": [
+                    "EnrollmentKey"
                 ]
             }
         },
@@ -8411,6 +9384,435 @@
                 "summary": "List agent lifecycle events (paginated)",
                 "tags": [
                     "AgentEvent"
+                ]
+            }
+        },
+        "/services/{service}/agent-metrics": {
+            "get": {
+                "description": "`metrics` has the latest value per key of the metric catalog (the keys conditions use, e.g.\n`sys.cpu.total_pct`), null for a key the agent has not reported within a day. `disks`, `gpus`\nand `smart` list the devices with their latest values, `probes` the checks the server runs\nitself (ports, URLs, hosts) with whether they are up.",
+                "operationId": "v1.services.agent-metrics.current",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "service",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "disks": {
+                                                    "description": "Mounted filesystems with their latest figures, keyed by metric (`used_pct`,\n`total_bytes` …).",
+                                                    "items": {
+                                                        "properties": {
+                                                            "metrics": {
+                                                                "additionalProperties": {
+                                                                    "type": "number"
+                                                                },
+                                                                "type": "object"
+                                                            },
+                                                            "mount": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "mount",
+                                                            "metrics"
+                                                        ],
+                                                        "type": "object"
+                                                    },
+                                                    "type": "array"
+                                                },
+                                                "gpus": {
+                                                    "description": "Graphics cards with their latest figures.",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "string"
+                                                            },
+                                                            "metrics": {
+                                                                "additionalProperties": {
+                                                                    "type": "number"
+                                                                },
+                                                                "type": "object"
+                                                            },
+                                                            "name": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "id",
+                                                            "name",
+                                                            "metrics"
+                                                        ],
+                                                        "type": "object"
+                                                    },
+                                                    "type": "array"
+                                                },
+                                                "metrics": {
+                                                    "additionalProperties": {
+                                                        "type": [
+                                                            "number",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "description": "The latest value per metric key, e.g. `sys.cpu.total_pct`; null when the agent has not\nreported the key within a day.",
+                                                    "type": "object"
+                                                },
+                                                "probes": {
+                                                    "description": "The checks the server runs itself (ports, URLs, hosts): whether the target is up, null\nuntil it has reported, and its latest figures.",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "string"
+                                                            },
+                                                            "label": {
+                                                                "type": "string"
+                                                            },
+                                                            "metrics": {
+                                                                "additionalProperties": {
+                                                                    "type": "number"
+                                                                },
+                                                                "type": "object"
+                                                            },
+                                                            "port": {
+                                                                "type": [
+                                                                    "integer",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "target": {
+                                                                "type": "string"
+                                                            },
+                                                            "type": {
+                                                                "type": "string"
+                                                            },
+                                                            "up": {
+                                                                "type": [
+                                                                    "boolean",
+                                                                    "null"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "id",
+                                                            "label",
+                                                            "type",
+                                                            "target",
+                                                            "port",
+                                                            "up",
+                                                            "metrics"
+                                                        ],
+                                                        "type": "object"
+                                                    },
+                                                    "type": "array"
+                                                },
+                                                "reported_at": {
+                                                    "description": "When the server last reported a disk, GPU, SMART or probe figure (ISO 8601); null when\nit has not within the last hour.",
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "smart": {
+                                                    "description": "Drives with their latest SMART figures.",
+                                                    "items": {
+                                                        "properties": {
+                                                            "device": {
+                                                                "type": "string"
+                                                            },
+                                                            "metrics": {
+                                                                "additionalProperties": {
+                                                                    "type": "number"
+                                                                },
+                                                                "type": "object"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "device",
+                                                            "metrics"
+                                                        ],
+                                                        "type": "object"
+                                                    },
+                                                    "type": "array"
+                                                }
+                                            },
+                                            "required": [
+                                                "metrics",
+                                                "disks",
+                                                "gpus",
+                                                "smart",
+                                                "probes",
+                                                "reported_at"
+                                            ],
+                                            "type": "object"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ],
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "The figures are temporarily unavailable. Retry after `Retry-After` seconds. Empty figures are never sent in their place: they would read as \"the server reported nothing\".",
+                        "headers": {
+                            "Retry-After": {
+                                "description": "Seconds to wait before retrying.",
+                                "example": 30,
+                                "schema": {
+                                    "type": "integer"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Current figures of a server",
+                "tags": [
+                    "AgentMetrics"
+                ]
+            }
+        },
+        "/services/{service}/agent-metrics/history": {
+            "get": {
+                "description": "The window ends now. It is split into about 240 buckets, and every metric gets the bucket\naverage (`avg`) and the bucket peak (`max`) on the shared `timestamps`; null is a bucket\nwithout a report. `stats` sums up the whole window per metric, percentiles included.\nWindows up to 14 days are read from the raw reports, longer ones from hourly and daily\nrollups.",
+                "operationId": "v1.services.agent-metrics.history",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "service",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "The window, ending now (default `24h`). A window longer than your plan keeps data is\nshortened to it; `window_seconds` in the response says what was read.",
+                        "example": "7d",
+                        "in": "query",
+                        "name": "range",
+                        "schema": {
+                            "enum": [
+                                "1h",
+                                "6h",
+                                "24h",
+                                "7d",
+                                "30d",
+                                "90d",
+                                "365d"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "Only these metrics, at most 100, repeated as `keys[]=` or comma-separated\n(`keys=sys.cpu.total_pct,sys.mem.used_pct`). Keys are the ones conditions use; a\nper-device key names the device (`sys.disk._root.used_pct`). Absent or empty → every\nmetric the server reported in the window.",
+                        "example": "sys.cpu.total_pct",
+                        "in": "query",
+                        "name": "keys[]",
+                        "schema": {
+                            "items": {
+                                "type": "string"
+                            },
+                            "type": "array"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "metrics": {
+                                                    "additionalProperties": {
+                                                        "properties": {
+                                                            "avg": {
+                                                                "items": {
+                                                                    "type": [
+                                                                        "number",
+                                                                        "null"
+                                                                    ]
+                                                                },
+                                                                "type": "array"
+                                                            },
+                                                            "max": {
+                                                                "items": {
+                                                                    "type": [
+                                                                        "number",
+                                                                        "null"
+                                                                    ]
+                                                                },
+                                                                "type": "array"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "avg",
+                                                            "max"
+                                                        ],
+                                                        "type": "object"
+                                                    },
+                                                    "description": "Per metric key, one value per timestamp: the bucket average and the bucket peak; null\nfor a bucket without a report.",
+                                                    "type": "object"
+                                                },
+                                                "stats": {
+                                                    "additionalProperties": {
+                                                        "properties": {
+                                                            "avg": {
+                                                                "type": [
+                                                                    "number",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "last": {
+                                                                "type": [
+                                                                    "number",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "max": {
+                                                                "type": [
+                                                                    "number",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "min": {
+                                                                "type": [
+                                                                    "number",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "p50": {
+                                                                "type": [
+                                                                    "number",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "p95": {
+                                                                "type": [
+                                                                    "number",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "p99": {
+                                                                "type": [
+                                                                    "number",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "samples": {
+                                                                "type": "integer"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "last",
+                                                            "min",
+                                                            "avg",
+                                                            "max",
+                                                            "p50",
+                                                            "p95",
+                                                            "p99",
+                                                            "samples"
+                                                        ],
+                                                        "type": "object"
+                                                    },
+                                                    "description": "Per metric over the whole window: the latest value, min, average, max, the 50th, 95th\nand 99th percentile, and how many reports they rest on.",
+                                                    "type": "object"
+                                                },
+                                                "timestamps": {
+                                                    "description": "The start of every bucket (ISO 8601, UTC), oldest first.",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "type": "array"
+                                                },
+                                                "window_seconds": {
+                                                    "description": "The window read, in seconds: the requested range, or your plan's data retention if\nthat is shorter.",
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "window_seconds",
+                                                "timestamps",
+                                                "metrics",
+                                                "stats"
+                                            ],
+                                            "type": "object"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ],
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ],
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "description": "The history is temporarily unavailable. Retry after `Retry-After` seconds. Empty series are never sent in their place: they would read as a gap in reporting.",
+                        "headers": {
+                            "Retry-After": {
+                                "description": "Seconds to wait before retrying.",
+                                "example": 30,
+                                "schema": {
+                                    "type": "integer"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "History of a server's figures",
+                "tags": [
+                    "AgentMetrics"
                 ]
             }
         },

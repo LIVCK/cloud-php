@@ -6,6 +6,8 @@ namespace LIVCK\Cloud\Resources;
 
 use Generator;
 use LIVCK\Cloud\Builders\ServiceBuilder;
+use LIVCK\Cloud\Data\AgentMetrics;
+use LIVCK\Cloud\Data\AgentMetricsHistory;
 use LIVCK\Cloud\Data\CheckResult;
 use LIVCK\Cloud\Data\CheckTypeCatalog;
 use LIVCK\Cloud\Data\Incident;
@@ -14,6 +16,7 @@ use LIVCK\Cloud\Data\ResponseTimePoint;
 use LIVCK\Cloud\Data\Service;
 use LIVCK\Cloud\Data\ServiceMetrics;
 use LIVCK\Cloud\Data\UptimeDay;
+use LIVCK\Cloud\Enums\AgentMetricsRange;
 use LIVCK\Cloud\Enums\MetricsRange;
 use LIVCK\Cloud\Enums\StatusOverride;
 use LIVCK\Cloud\Exceptions\ApiException;
@@ -37,6 +40,9 @@ use LIVCK\Cloud\Support\Path;
 final readonly class Services implements ServicesInterface
 {
     public const int MAX_UPTIME_DAYS = 90;
+
+    /** The server's cap on the keys one history request names. */
+    public const int MAX_AGENT_METRIC_KEYS = 100;
 
     /** The server's cap on the override reason. */
     public const int MAX_OVERRIDE_REASON_LENGTH = 500;
@@ -180,6 +186,26 @@ final readonly class Services implements ServicesInterface
         return Envelope::collection($response, ResponseTimePoint::fromArray(...));
     }
 
+    public function agentMetrics(string $id): AgentMetrics
+    {
+        $response = $this->transport->send(Request::get(Path::join('services', $id, 'agent-metrics')));
+
+        return Envelope::item($response, AgentMetrics::fromArray(...));
+    }
+
+    public function agentMetricsHistory(string $id, AgentMetricsRange $range = AgentMetricsRange::TwentyFourHours, string ...$keys): AgentMetricsHistory
+    {
+        $query = ['range' => $range];
+
+        if ($keys !== []) {
+            $query['keys'] = $this->metricKeys($keys);
+        }
+
+        $response = $this->transport->send(Request::get(Path::join('services', $id, 'agent-metrics', 'history'), $query));
+
+        return Envelope::item($response, AgentMetricsHistory::fromArray(...));
+    }
+
     public function checks(string $id, ?CheckQuery $query = null): CursorPage
     {
         $query ??= CheckQuery::make();
@@ -224,5 +250,26 @@ final readonly class Services implements ServicesInterface
             Maintenance::fromArray(...),
             fn(int $page): Page => $this->maintenances($id, $query->withPage($page)),
         );
+    }
+
+    /**
+     * @param array<array-key, string> $keys
+     * @return list<string> each key once, in the order given
+     */
+    private function metricKeys(array $keys): array
+    {
+        foreach ($keys as $key) {
+            if (trim($key) === '') {
+                throw new InvalidArgumentException('A metric key must not be blank: pass a catalog key such as "sys.cpu.total_pct".');
+            }
+        }
+
+        $unique = array_values(array_unique($keys));
+
+        if (count($unique) > self::MAX_AGENT_METRIC_KEYS) {
+            throw new InvalidArgumentException(sprintf('At most %d metric keys fit into one history request.', self::MAX_AGENT_METRIC_KEYS));
+        }
+
+        return $unique;
     }
 }

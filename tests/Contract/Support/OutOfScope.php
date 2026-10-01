@@ -14,11 +14,11 @@ final class OutOfScope
 {
     private const string ON_CALL = 'On-call scheduling (rotations, shifts, cover requests, absences) is operated by teams in the console; it is not part of the reseller surface this SDK covers.';
 
-    private const string AGENTS = 'Agent enrolment, configuration and token rotation are called by the server agent with its own managed token, never with an organization token.';
+    private const string AGENTS = 'Agent enrolment, configuration and token rotation are called by the installer and the server agent with an enrollment key or the agent\'s own managed token, never with an organization token.';
 
-    private const string AGENT_CONDITIONS = 'Metric conditions exist for agent-monitored services only, which cannot be created through the API.';
+    private const string AGENT_CONDITIONS = 'The thresholds on a server\'s figures are set up next to the server in the console; the SDK reads agent services and their figures, it does not edit their conditions.';
 
-    private const string AGENT_EVENTS = 'The agent event log belongs to agent-monitored services, which cannot be created through the API.';
+    private const string AGENT_EVENTS = 'The agent event log (reboots, updates, state changes) is a console timeline; the SDK covers the server\'s state on the service and its figures.';
 
     private const string LAYOUT = 'The page layout (sections and their order) is edited in the console; the SDK shapes a page through its components.';
 

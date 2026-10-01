@@ -6,6 +6,8 @@ namespace LIVCK\Cloud\Resources;
 
 use Generator;
 use LIVCK\Cloud\Builders\ServiceBuilder;
+use LIVCK\Cloud\Data\AgentMetrics;
+use LIVCK\Cloud\Data\AgentMetricsHistory;
 use LIVCK\Cloud\Data\CheckResult;
 use LIVCK\Cloud\Data\CheckTypeCatalog;
 use LIVCK\Cloud\Data\Incident;
@@ -14,6 +16,7 @@ use LIVCK\Cloud\Data\ResponseTimePoint;
 use LIVCK\Cloud\Data\Service;
 use LIVCK\Cloud\Data\ServiceMetrics;
 use LIVCK\Cloud\Data\UptimeDay;
+use LIVCK\Cloud\Enums\AgentMetricsRange;
 use LIVCK\Cloud\Enums\MetricsRange;
 use LIVCK\Cloud\Enums\StatusOverride;
 use LIVCK\Cloud\Exceptions\ApiException;
@@ -182,6 +185,34 @@ interface ServicesInterface
      * @throws ApiException
      */
     public function responseTimes(string $id, MetricsRange $range = MetricsRange::TwentyFourHours): array;
+
+    /**
+     * The current figures of the server behind an `agent` service: the latest value of every
+     * host key of the metric catalog (`sys.cpu.total_pct`, …), its disks, graphics cards and
+     * drives, and the checks the server runs itself. A server that has not reported yet answers
+     * with nulls and empty lists.
+     *
+     * @throws NotFoundException for a service that is no `agent` service, as for an unknown one
+     * @throws ServiceUnavailableException when the figures cannot be read right now (`retryAfter()`)
+     * @throws ApiException
+     */
+    public function agentMetrics(string $id): AgentMetrics;
+
+    /**
+     * The course of the same figures over a window, as the console charts it: a few hundred
+     * buckets with the average and peak per key, plus each key's figures over the window. A
+     * window longer than the plan keeps data for is shortened to the retention
+     * (`windowSeconds` tells). `$keys` picks keys of the metric catalog (`sys.cpu.total_pct`,
+     * `sys.disk._root.used_pct`), at most 100; without them every key the server reported in
+     * the window comes back.
+     *
+     * @throws InvalidArgumentException for a blank key, more than 100 keys or an unrecognized range (nothing is sent)
+     * @throws ValidationException for a key that is no server metric of the catalog, on its entry (`keys.0`)
+     * @throws NotFoundException for a service that is no `agent` service, as for an unknown one
+     * @throws ServiceUnavailableException when the figures cannot be read right now (`retryAfter()`)
+     * @throws ApiException
+     */
+    public function agentMetricsHistory(string $id, AgentMetricsRange $range = AgentMetricsRange::TwentyFourHours, string ...$keys): AgentMetricsHistory;
 
     /**
      * The raw check history, newest first, keyset-paginated: one row per check a probe ran.

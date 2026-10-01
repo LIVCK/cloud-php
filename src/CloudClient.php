@@ -17,6 +17,8 @@ use LIVCK\Cloud\Http\Sleeper;
 use LIVCK\Cloud\Http\SystemSleeper;
 use LIVCK\Cloud\Http\Transport;
 use LIVCK\Cloud\Resources\Discovery;
+use LIVCK\Cloud\Resources\EnrollmentKeys;
+use LIVCK\Cloud\Resources\EnrollmentKeysInterface;
 use LIVCK\Cloud\Resources\Incidents;
 use LIVCK\Cloud\Resources\IncidentsInterface;
 use LIVCK\Cloud\Resources\Maintenances;
@@ -85,6 +87,8 @@ final class CloudClient implements CloudClientInterface
     private ?Incidents $incidents = null;
 
     private ?Maintenances $maintenances = null;
+
+    private ?EnrollmentKeys $enrollmentKeys = null;
 
     private ?Discovery $discovery = null;
 
@@ -188,6 +192,11 @@ final class CloudClient implements CloudClientInterface
     public function maintenances(): MaintenancesInterface
     {
         return $this->maintenances ??= new Maintenances($this->transport);
+    }
+
+    public function enrollmentKeys(): EnrollmentKeysInterface
+    {
+        return $this->enrollmentKeys ??= new EnrollmentKeys($this->transport);
     }
 
     public function me(): Me

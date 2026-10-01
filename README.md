@@ -162,6 +162,35 @@ exactly that slug or null (`StatuspageQuery::withSlug()` on the list). A domain 
 itself once LIVCK sees the records (`verify()` asks right away), and `$page->url` then
 switches to it.
 
+## Servers and enrollment keys
+
+A server joins through the LIVCK agent: its install command carries an enrollment key, and the
+server appears as an `agent` service. Give each customer's server its own key with the
+customer's tag. The key's tags are the server's; the install cannot replace them.
+
+```php
+use LIVCK\Cloud\Builders\EnrollmentKeyBuilder;
+use LIVCK\Cloud\Enums\EnrollmentKeyStatus;
+
+// One server, valid for 24 hours. The key comes back this once.
+$created = $client->enrollmentKeys()->create(EnrollmentKeyBuilder::single('Customer 4711')->tags($tag));
+$command = $created->installCommand->reveal(); // run on the server, as root
+
+// Later: once the server has enrolled, the key is exhausted and names it.
+$key = $client->enrollmentKeys()->get($created->key->id);
+
+if ($key->status === EnrollmentKeyStatus::Exhausted && $key->latestService() !== null) {
+    $server = $client->services()->get($key->latestService()->id);
+    $cpu = $client->services()->agentMetrics($server->id)->metric('sys.cpu.total_pct');
+}
+```
+
+`token` and `installCommand` are `Secret`s: `reveal()` reads them, dumps, log lines and
+`json_encode()` never show them, and serializing one is refused. `fleet()` makes a key for many
+servers (images, cloud-init), `revoke()` stops a key while its servers keep running. A
+server's `agent` holds its state and host facts; `agentMetrics()` returns its latest figures by
+metric key and `agentMetricsHistory()` their course over a range.
+
 ## History: checks, incidents, maintenance
 
 ```php

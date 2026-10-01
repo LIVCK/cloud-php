@@ -45,6 +45,8 @@ final class InScope
             'GET /services/{service}/checks',
             'GET /services/{service}/incidents',
             'GET /services/{service}/maintenances',
+            'GET /services/{service}/agent-metrics',
+            'GET /services/{service}/agent-metrics/history',
 
             // Incidents and maintenances, the read side
             'GET /incidents',
@@ -72,6 +74,12 @@ final class InScope
             'GET /statuspages/{statuspage}/custom-domains/{domain}',
             'DELETE /statuspages/{statuspage}/custom-domains/{domain}',
             'POST /statuspages/{statuspage}/custom-domains/{domain}/verify',
+
+            // Enrollment keys, the credentials a server agent enrolls with
+            'GET /enrollment-keys',
+            'POST /enrollment-keys',
+            'GET /enrollment-keys/{key}',
+            'DELETE /enrollment-keys/{key}',
         ];
     }
 }

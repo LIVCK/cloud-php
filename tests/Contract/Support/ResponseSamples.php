@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace LIVCK\Cloud\Tests\Contract\Support;
 
 use InvalidArgumentException;
+use LIVCK\Cloud\Support\JsonObject;
 use LIVCK\Cloud\Testing\MockResponse;
 use LIVCK\Cloud\Tests\Fixtures\CatalogFixture;
 use LIVCK\Cloud\Tests\Fixtures\CheckFixtures;
 use LIVCK\Cloud\Tests\Fixtures\DiscoveryFixtures;
+use LIVCK\Cloud\Tests\Fixtures\EnrollmentKeyFixtures;
 use LIVCK\Cloud\Tests\Fixtures\IncidentFixtures;
 use LIVCK\Cloud\Tests\Fixtures\MaintenanceFixtures;
 use LIVCK\Cloud\Tests\Fixtures\ServiceFixtures;
@@ -42,7 +44,7 @@ final class ResponseSamples
     {
         $samples = [];
 
-        foreach ([...self::discovery(), ...self::tags(), ...self::services(), ...self::incidentsAndMaintenances(), ...self::statuspages()] as $sample) {
+        foreach ([...self::discovery(), ...self::tags(), ...self::services(), ...self::incidentsAndMaintenances(), ...self::statuspages(), ...self::enrollmentKeys()] as $sample) {
             $samples[$sample->name] = $sample;
         }
 
@@ -91,11 +93,28 @@ final class ResponseSamples
     private static function services(): array
     {
         $service = ServiceFixtures::payload();
+        $agentSettings = ServiceFixtures::settings(['assigned_probes' => null, 'probe_roles' => null, 'config' => JsonObject::empty()]);
 
         return [
             self::page('services.index', 'GET /services', [$service, ServiceFixtures::unconfigured()]),
             self::item('services.show', 'GET /services/{service}', $service),
             self::item('services.show.unconfigured', 'GET /services/{service}', ServiceFixtures::unconfigured()),
+            // The server writes an agent service's empty config as `[]` where the document declares an
+            // object; the samples carry `{}`, the documented form. The DTO reads both.
+            self::item('services.show.agent', 'GET /services/{service}', ServiceFixtures::agentPayload([], ['settings' => $agentSettings])),
+            self::item('services.show.agent.waiting', 'GET /services/{service}', ServiceFixtures::agentPayload([
+                'state' => 'waiting',
+                'state_changed_at' => null,
+                'last_seen_at' => null,
+                'kernel' => null,
+                'cpu_model' => null,
+                'cpu_cores' => null,
+                'ram_total_bytes' => null,
+                'booted_at' => null,
+                'ips' => ['private' => [], 'public' => [], 'observed' => []],
+                'update' => ['automatic' => true, 'window_start' => '00:00', 'window_end' => '04:00', 'available_version' => null],
+                'enrollment_key_id' => null,
+            ], ['settings' => $agentSettings])),
             self::item('services.store', 'POST /services', $service, 201),
             self::item('services.update', 'PUT /services/{service}', $service),
             self::item('services.pause', 'POST /services/{service}/pause', ServiceFixtures::payload(['is_paused' => true, 'paused_reason' => 'manual'])),
@@ -110,6 +129,19 @@ final class ResponseSamples
             self::raw('services.metrics', 'GET /services/{service}/metrics', MockResponse::json(ServiceFixtures::metrics())),
             self::raw('services.uptime', 'GET /services/{service}/uptime', MockResponse::json(ServiceFixtures::uptime())),
             self::raw('services.response-times', 'GET /services/{service}/response-times', MockResponse::json(ServiceFixtures::responseTimes())),
+            self::raw('services.agent-metrics', 'GET /services/{service}/agent-metrics', MockResponse::json(ServiceFixtures::agentMetrics())),
+            self::item('services.agent-metrics.before-first-report', 'GET /services/{service}/agent-metrics', ServiceFixtures::agentMetricsBeforeFirstReport()),
+            self::raw('services.agent-metrics.history', 'GET /services/{service}/agent-metrics/history', MockResponse::json(ServiceFixtures::agentMetricsHistory())),
+            self::item('services.agent-metrics.history.empty', 'GET /services/{service}/agent-metrics/history', [
+                'window_seconds' => 3600,
+                'timestamps' => [],
+                'metrics' => JsonObject::empty(),
+                'stats' => JsonObject::empty(),
+            ]),
+            self::item('services.agent-metrics.history.unreported-key', 'GET /services/{service}/agent-metrics/history', ServiceFixtures::agentMetricsHistoryData([
+                'metrics' => ['sys.swap.used_pct' => ['avg' => [], 'max' => []]],
+                'stats' => ['sys.swap.used_pct' => ['last' => null, 'min' => null, 'avg' => null, 'max' => null, 'p50' => null, 'p95' => null, 'p99' => null, 'samples' => 0]],
+            ])),
             self::raw('services.checks.index', 'GET /services/{service}/checks', MockResponse::cursorPage([CheckFixtures::payload(), CheckFixtures::failed()], 'MjAyNi0wOS0yMFQxMDowMDowMC4wMDBafGhlbA')),
             self::raw('services.checks.index.last-page', 'GET /services/{service}/checks', MockResponse::cursorPage([])),
             self::page('services.incidents.index', 'GET /services/{service}/incidents', [IncidentFixtures::withImpact()]),
@@ -163,6 +195,19 @@ final class ResponseSamples
             self::item('statuspages.custom-domains.show', $domains . '/{domain}', StatuspageFixtures::activeDomain()),
             self::item('statuspages.custom-domains.store', 'POST /statuspages/{statuspage}/custom-domains', StatuspageFixtures::customDomain(), 201),
             self::item('statuspages.custom-domains.verify', 'POST /statuspages/{statuspage}/custom-domains/{domain}/verify', StatuspageFixtures::activeDomain()),
+        ];
+    }
+
+    /**
+     * @return list<ResponseSample>
+     */
+    private static function enrollmentKeys(): array
+    {
+        return [
+            self::page('enrollment-keys.index', 'GET /enrollment-keys', [EnrollmentKeyFixtures::payload(), EnrollmentKeyFixtures::revokedFleet()]),
+            self::page('enrollment-keys.index.empty', 'GET /enrollment-keys', []),
+            self::item('enrollment-keys.show', 'GET /enrollment-keys/{key}', EnrollmentKeyFixtures::exhausted()),
+            self::item('enrollment-keys.store', 'POST /enrollment-keys', EnrollmentKeyFixtures::created(), 201),
         ];
     }
 
