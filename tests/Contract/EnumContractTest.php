@@ -20,6 +20,7 @@ use LIVCK\Cloud\Enums\LogoSize;
 use LIVCK\Cloud\Enums\MaintenanceStatus;
 use LIVCK\Cloud\Enums\ProbeRole;
 use LIVCK\Cloud\Enums\StatusOverride;
+use LIVCK\Cloud\Enums\StatuspageAppearance;
 use LIVCK\Cloud\Enums\SubscriberChannel;
 use LIVCK\Cloud\Tests\Contract\Support\OpenApiSpec;
 use LIVCK\Cloud\Tests\Contract\Support\Parameter;
@@ -88,6 +89,7 @@ describe('enum values', function (): void {
         expect(enumWireValues($enum))->toBe(schemaEnum($pointer));
     })->with([
         'LogoSize' => [LogoSize::class, '/components/schemas/LogoSize'],
+        'StatuspageAppearance' => [StatuspageAppearance::class, '/components/schemas/StatuspageAppearance'],
         'AccessType' => [AccessType::class, '/components/schemas/AccessType'],
         'SubscriberChannel' => [SubscriberChannel::class, '/components/schemas/SubscriberChannelType'],
         'ComponentStatus' => [ComponentStatus::class, '/components/schemas/ComponentStatus'],

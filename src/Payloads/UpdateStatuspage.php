@@ -6,6 +6,7 @@ namespace LIVCK\Cloud\Payloads;
 
 use LIVCK\Cloud\Enums\AccessType;
 use LIVCK\Cloud\Enums\LogoSize;
+use LIVCK\Cloud\Enums\StatuspageAppearance;
 use LIVCK\Cloud\Enums\SubscriberChannel;
 use LIVCK\Cloud\Exceptions\InvalidArgumentException;
 use LIVCK\Cloud\Support\Translatable;
@@ -132,6 +133,24 @@ final readonly class UpdateStatuspage
     public function withShowLivi(bool $show): self
     {
         return $this->with('show_livi', $show);
+    }
+
+    /**
+     * The mode a visitor gets until they pick one on the page; {@see StatuspageAppearance::System}
+     * follows the light or dark setting of their device.
+     */
+    public function withAppearance(StatuspageAppearance $appearance): self
+    {
+        return $this->with('appearance', $appearance);
+    }
+
+    /**
+     * Whether the page lets visitors pick light, dark or their device's setting. Off, every
+     * visitor gets the page's appearance, whatever they picked before.
+     */
+    public function withAllowAppearanceSwitch(bool $allow): self
+    {
+        return $this->with('allow_appearance_switch', $allow);
     }
 
     /** Whether incidents and maintenances list the services they affect. */

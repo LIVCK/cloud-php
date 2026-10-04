@@ -10,6 +10,7 @@ use LIVCK\Cloud\Enums\AccessType;
 use LIVCK\Cloud\Enums\AssetType;
 use LIVCK\Cloud\Enums\ComponentStatus;
 use LIVCK\Cloud\Enums\LogoSize;
+use LIVCK\Cloud\Enums\StatuspageAppearance;
 use LIVCK\Cloud\Enums\SubscriberChannel;
 use LIVCK\Cloud\Exceptions\InvalidArgumentException;
 use LIVCK\Cloud\Exceptions\NotFoundException;
@@ -121,6 +122,8 @@ describe('get', function (): void {
             ->and($page->showLogo)->toBeTrue()
             ->and($page->logoSize)->toBe(LogoSize::Medium)
             ->and($page->showLivi)->toBeTrue()
+            ->and($page->appearance)->toBe(StatuspageAppearance::System)
+            ->and($page->allowAppearanceSwitch)->toBeTrue()
             ->and($page->showAffectedServices)->toBeTrue()
             ->and($page->showUnlinkedServices)->toBeFalse()
             ->and($page->showIncidentHistory)->toBeTrue()
@@ -169,6 +172,8 @@ describe('get', function (): void {
             ->and($page->showLogo)->toBeFalse()
             ->and($page->logoSize)->toBe(LogoSize::Large)
             ->and($page->showLivi)->toBeFalse()
+            ->and($page->appearance)->toBe(StatuspageAppearance::Dark)
+            ->and($page->allowAppearanceSwitch)->toBeFalse()
             ->and($page->showAffectedServices)->toBeFalse()
             ->and($page->showUnlinkedServices)->toBeTrue()
             ->and($page->showIncidentHistory)->toBeFalse()
@@ -203,10 +208,21 @@ describe('get', function (): void {
         'public, medium' => ['public', AccessType::Public, 'medium', LogoSize::Medium],
     ]);
 
+    it('reads every appearance', function (string $wire, StatuspageAppearance $appearance): void {
+        [$client] = fakeClient([MockResponse::json(['data' => StatuspageFixtures::page(['appearance' => $wire])])]);
+
+        expect($client->statuspages()->get('p')->appearance)->toBe($appearance);
+    })->with([
+        'system' => ['system', StatuspageAppearance::System],
+        'light' => ['light', StatuspageAppearance::Light],
+        'dark' => ['dark', StatuspageAppearance::Dark],
+    ]);
+
     it('keeps unknown enum values readable', function (): void {
         [$client] = fakeClient([MockResponse::json(['data' => StatuspageFixtures::page([
             'access_type' => 'sso',
             'logo_size' => 'huge',
+            'appearance' => 'sepia',
             'subscriber_channels' => ['email', 'carrier_pigeon'],
         ])])]);
 
@@ -214,9 +230,11 @@ describe('get', function (): void {
 
         expect($page->accessType)->toBe(AccessType::Unrecognized)
             ->and($page->logoSize)->toBe(LogoSize::Unrecognized)
+            ->and($page->appearance)->toBe(StatuspageAppearance::Unrecognized)
             ->and($page->subscriberChannels)->toBe([SubscriberChannel::Email, SubscriberChannel::Unrecognized])
             ->and($page->raw['access_type'])->toBe('sso')
-            ->and($page->raw['logo_size'])->toBe('huge');
+            ->and($page->raw['logo_size'])->toBe('huge')
+            ->and($page->raw['appearance'])->toBe('sepia');
     });
 
     it('percent-encodes the id in the path', function (): void {
@@ -343,10 +361,14 @@ describe('update', function (): void {
             ->withAccessType(AccessType::Password)
             ->withPassword('super-secret-1')
             ->withLogoSize(LogoSize::Large)
+            ->withAppearance(StatuspageAppearance::Dark)
+            ->withAllowAppearanceSwitch(false)
             ->withSubscriberChannels(SubscriberChannel::Email, SubscriberChannel::Webhook));
 
         expect($page->primaryColor)->toBe('#0F172A')
-            ->and($page->hasPassword)->toBeTrue();
+            ->and($page->hasPassword)->toBeTrue()
+            ->and($page->appearance)->toBe(StatuspageAppearance::Dark)
+            ->and($page->allowAppearanceSwitch)->toBeFalse();
 
         $http->assertSent(fn(RecordedRequest $r): bool => $r->matches('PATCH', '/v1/statuspages/' . StatuspageFixtures::PAGE_ID)
             && $r->json() === [
@@ -354,6 +376,8 @@ describe('update', function (): void {
                 'access_type' => 'password',
                 'password' => 'super-secret-1',
                 'logo_size' => 'large',
+                'appearance' => 'dark',
+                'allow_appearance_switch' => false,
                 'subscriber_channels' => ['email', 'webhook'],
             ]
             && ! $r->hasHeader('Idempotency-Key'));
@@ -378,6 +402,8 @@ describe('update', function (): void {
         [$client, $http] = fakeClient();
 
         expect(fn(): Statuspage => $client->statuspages()->update('p', UpdateStatuspage::make()->withLogoSize(LogoSize::Unrecognized)))
+            ->toThrow(InvalidArgumentException::class, 'Unrecognized')
+            ->and(fn(): Statuspage => $client->statuspages()->update('p', UpdateStatuspage::make()->withAppearance(StatuspageAppearance::Unrecognized)))
             ->toThrow(InvalidArgumentException::class, 'Unrecognized');
         $http->assertNothingSent();
     });

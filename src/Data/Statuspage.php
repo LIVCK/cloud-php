@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use LIVCK\Cloud\Data\Concerns\ReadsStringMaps;
 use LIVCK\Cloud\Enums\AccessType;
 use LIVCK\Cloud\Enums\LogoSize;
+use LIVCK\Cloud\Enums\StatuspageAppearance;
 use LIVCK\Cloud\Enums\SubscriberChannel;
 use LIVCK\Cloud\Support\Field;
 
@@ -53,6 +54,12 @@ final readonly class Statuspage
      *                                                  Sent by `get`, `create`, `update`, `publish` and
      *                                                  `unpublish`; null in lists and asset responses.
      * @param array<string, mixed> $raw the payload as received, for fields the SDK does not map yet
+     * @param StatuspageAppearance $appearance the mode a visitor gets until they pick one on the page;
+     *                                         {@see StatuspageAppearance::System} follows the light or dark
+     *                                         setting of their device
+     * @param bool $allowAppearanceSwitch whether the page lets visitors pick light, dark or their device's setting.
+     *                                    False gives every visitor `appearance`. Both follow `$raw` so that
+     *                                    constructor calls written for earlier versions keep working.
      */
     public function __construct(
         public string $id,
@@ -89,6 +96,8 @@ final readonly class Statuspage
         public ?DateTimeImmutable $createdAt,
         public ?array $components,
         public array $raw,
+        public StatuspageAppearance $appearance = StatuspageAppearance::System,
+        public bool $allowAppearanceSwitch = true,
     ) {}
 
     /**
@@ -136,6 +145,8 @@ final readonly class Statuspage
             Field::nullableInstant($data, 'created_at'),
             $components,
             $data,
+            StatuspageAppearance::fromApi(Field::string($data, 'appearance')),
+            Field::bool($data, 'allow_appearance_switch'),
         );
     }
 

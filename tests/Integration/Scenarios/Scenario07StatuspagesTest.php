@@ -13,6 +13,7 @@ use LIVCK\Cloud\Enums\AssetType;
 use LIVCK\Cloud\Enums\ComponentStatus;
 use LIVCK\Cloud\Enums\CustomDomainErrorCode;
 use LIVCK\Cloud\Enums\CustomDomainStatus;
+use LIVCK\Cloud\Enums\StatuspageAppearance;
 use LIVCK\Cloud\Enums\SubscriberChannel;
 use LIVCK\Cloud\Exceptions\NotFoundException;
 use LIVCK\Cloud\Exceptions\PlanLimitException;
@@ -82,6 +83,8 @@ describe('scenario 7: status pages per customer', function () use ($skip): void 
                         ->and($page->effectiveSupportedLocales)->toContain($page->effectiveDefaultLocale)
                         ->and($page->hasOwnLocales())->toBeFalse()
                         ->and($page->theme)->not->toBe('')
+                        ->and($page->appearance)->toBe(StatuspageAppearance::System)
+                        ->and($page->allowAppearanceSwitch)->toBeTrue()
                         ->and($page->createdAt)->not->toBeNull();
 
                     $found = DtoAudit::inspect($client->statuspages()->findBySlug($page->slug), 'statuspages.findBySlug');
@@ -260,8 +263,17 @@ describe('scenario 7: status pages per customer', function () use ($skip): void 
                 $page = $customers['a']['page'];
                 $offline = DtoAudit::inspect($client->statuspages()->unpublish($page->id), 'statuspages.unpublish');
                 $online = DtoAudit::inspect($client->statuspages()->publish($page->id), 'statuspages.publish');
-                $updated = DtoAudit::inspect($client->statuspages()->update($page->id, UpdateStatuspage::make()->withPrimaryColor('#0f172a')->withShowLivi(false)->withImprintUrl('https://example.com/imprint')), 'statuspages.update');
-                $cleared = $client->statuspages()->update($page->id, UpdateStatuspage::make()->withoutPrimaryColor()->withoutImprintUrl());
+                $updated = DtoAudit::inspect($client->statuspages()->update($page->id, UpdateStatuspage::make()
+                    ->withPrimaryColor('#0f172a')
+                    ->withShowLivi(false)
+                    ->withImprintUrl('https://example.com/imprint')
+                    ->withAppearance(StatuspageAppearance::Dark)
+                    ->withAllowAppearanceSwitch(false)), 'statuspages.update');
+                $cleared = $client->statuspages()->update($page->id, UpdateStatuspage::make()
+                    ->withoutPrimaryColor()
+                    ->withoutImprintUrl()
+                    ->withAppearance(StatuspageAppearance::System)
+                    ->withAllowAppearanceSwitch(true));
 
                 expect($offline->isPublished)->toBeFalse()
                     ->and($offline->components)->not->toBeNull()
@@ -270,8 +282,12 @@ describe('scenario 7: status pages per customer', function () use ($skip): void 
                     ->and($updated->primaryColor)->toBe('#0f172a')
                     ->and($updated->showLivi)->toBeFalse()
                     ->and($updated->imprintUrl)->toBe('https://example.com/imprint')
+                    ->and($updated->appearance)->toBe(StatuspageAppearance::Dark)
+                    ->and($updated->allowAppearanceSwitch)->toBeFalse()
                     ->and($cleared->primaryColor)->toBeNull()
                     ->and($cleared->imprintUrl)->toBeNull()
+                    ->and($cleared->appearance)->toBe(StatuspageAppearance::System)
+                    ->and($cleared->allowAppearanceSwitch)->toBeTrue()
                     ->and($client->statuspages()->get($page->id)->isPublished)->toBeTrue();
             });
 

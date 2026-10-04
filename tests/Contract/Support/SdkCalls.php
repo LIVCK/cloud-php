@@ -36,6 +36,7 @@ use LIVCK\Cloud\Enums\MaintenanceStatus;
 use LIVCK\Cloud\Enums\MetricsRange;
 use LIVCK\Cloud\Enums\ProbeRole;
 use LIVCK\Cloud\Enums\StatusOverride;
+use LIVCK\Cloud\Enums\StatuspageAppearance;
 use LIVCK\Cloud\Enums\SubscriberChannel;
 use LIVCK\Cloud\Payloads\AssetFile;
 use LIVCK\Cloud\Payloads\CreateStatuspage;
@@ -502,6 +503,8 @@ final class SdkCalls
                 ->withShowLogo(false)
                 ->withLogoSize(LogoSize::Large)
                 ->withShowLivi(false)
+                ->withAppearance(StatuspageAppearance::Dark)
+                ->withAllowAppearanceSwitch(false)
                 ->withShowAffectedServices(false)
                 ->withShowUnlinkedServices(true)
                 ->withShowIncidentHistory(false)

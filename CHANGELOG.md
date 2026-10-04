@@ -17,6 +17,12 @@ All notable changes to this package are documented here. The format follows
   addresses, update settings and the key it enrolled with; null for every other service.
 - `services()->agentMetrics()` and `services()->agentMetricsHistory()`: a server's latest
   figures and their course over a range (`AgentMetricsRange`), keyed by the metric catalog.
+- `StatuspageAppearance`: `System` (follows the visitor's device), `Light` and `Dark`.
+- `Statuspage::$appearance`, the mode a visitor gets until they pick one on the page, and
+  `Statuspage::$allowAppearanceSwitch`, whether the page lets them pick. Both are read from
+  every status page response, so status page payloads of your own for `CloudClient::fake()`
+  need the keys `appearance` and `allow_appearance_switch`.
+- `UpdateStatuspage::withAppearance()` and `UpdateStatuspage::withAllowAppearanceSwitch()`.
 
 ### Changed
 

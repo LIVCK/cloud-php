@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use LIVCK\Cloud\Enums\AccessType;
 use LIVCK\Cloud\Enums\LogoSize;
+use LIVCK\Cloud\Enums\StatuspageAppearance;
 use LIVCK\Cloud\Enums\SubscriberChannel;
 use LIVCK\Cloud\Exceptions\InvalidArgumentException;
 use LIVCK\Cloud\Payloads\UpdateStatuspage;
@@ -33,6 +34,8 @@ it('maps every setter to its API field', function (UpdateStatuspage $update, arr
     'show logo' => [fn(): UpdateStatuspage => UpdateStatuspage::make()->withShowLogo(false), ['show_logo' => false]],
     'logo size' => [fn(): UpdateStatuspage => UpdateStatuspage::make()->withLogoSize(LogoSize::Small), ['logo_size' => LogoSize::Small]],
     'show livi' => [fn(): UpdateStatuspage => UpdateStatuspage::make()->withShowLivi(false), ['show_livi' => false]],
+    'appearance' => [fn(): UpdateStatuspage => UpdateStatuspage::make()->withAppearance(StatuspageAppearance::Dark), ['appearance' => StatuspageAppearance::Dark]],
+    'appearance switch' => [fn(): UpdateStatuspage => UpdateStatuspage::make()->withAllowAppearanceSwitch(false), ['allow_appearance_switch' => false]],
     'affected services' => [fn(): UpdateStatuspage => UpdateStatuspage::make()->withShowAffectedServices(false), ['show_affected_services' => false]],
     'unlinked services' => [fn(): UpdateStatuspage => UpdateStatuspage::make()->withShowUnlinkedServices(true), ['show_unlinked_services' => true]],
     'incident history' => [fn(): UpdateStatuspage => UpdateStatuspage::make()->withShowIncidentHistory(false), ['show_incident_history' => false]],
@@ -72,9 +75,10 @@ it('encodes enums by value on the wire', function (): void {
     $update = UpdateStatuspage::make()
         ->withAccessType(AccessType::Password)
         ->withLogoSize(LogoSize::Large)
+        ->withAppearance(StatuspageAppearance::Light)
         ->withSubscriberChannels(SubscriberChannel::Email, SubscriberChannel::Discord);
 
-    expect(Json::encode($update->toArray()))->toBe('{"access_type":"password","logo_size":"large","subscriber_channels":["email","discord"]}');
+    expect(Json::encode($update->toArray()))->toBe('{"access_type":"password","logo_size":"large","appearance":"light","subscriber_channels":["email","discord"]}');
 });
 
 it('keeps the last value of a field and is immutable', function (): void {

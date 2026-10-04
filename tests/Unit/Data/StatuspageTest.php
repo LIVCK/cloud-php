@@ -61,6 +61,10 @@ it('fails with the field name when the payload drifts', function (Closure $build
         fn(): Statuspage => Statuspage::fromArray(StatuspageFixtures::page(['slug' => null])),
         'Field "slug": expected string, got null.',
     ],
+    'missing appearance' => [
+        fn(): Statuspage => Statuspage::fromArray(StatuspageFixtures::page(['appearance' => null])),
+        'Field "appearance": expected string, got null.',
+    ],
     'malformed created_at' => [
         fn(): Statuspage => Statuspage::fromArray(StatuspageFixtures::page(['created_at' => 'yesterday'])),
         'Field "created_at": expected ISO 8601 instant',

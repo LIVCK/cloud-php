@@ -2630,6 +2630,16 @@
                 "title": "SslConfig",
                 "type": "object"
             },
+            "StatuspageAppearance": {
+                "description": "Light or dark mode of the public status page: `system` (the default) follows each visitor's device setting, `light` and `dark` open the page in that mode.\n",
+                "enum": [
+                    "system",
+                    "light",
+                    "dark"
+                ],
+                "title": "StatuspageAppearance",
+                "type": "string"
+            },
             "StatuspageComponentResource": {
                 "properties": {
                     "default_open": {
@@ -2823,6 +2833,14 @@
             "StatuspageResource": {
                 "properties": {
                     "access_type": {
+                        "type": "string"
+                    },
+                    "allow_appearance_switch": {
+                        "description": "Whether visitors can switch between light, dark and system on the page. With `false`\neveryone sees `appearance` and the switch is hidden.",
+                        "type": "boolean"
+                    },
+                    "appearance": {
+                        "description": "Light or dark mode of the public page: `system` follows each visitor's device\nsetting, `light` and `dark` open the page in that mode.",
                         "type": "string"
                     },
                     "components": {
@@ -3040,6 +3058,8 @@
                     "show_logo",
                     "logo_size",
                     "show_livi",
+                    "appearance",
+                    "allow_appearance_switch",
                     "show_affected_services",
                     "show_unlinked_services",
                     "show_incident_history",
@@ -4585,6 +4605,14 @@
                 "properties": {
                     "access_type": {
                         "$ref": "#/components/schemas/AccessType"
+                    },
+                    "allow_appearance_switch": {
+                        "description": "Whether visitors can switch between light, dark and system on the page. `false` shows\neveryone the `appearance` you set and hides the switch.",
+                        "type": "boolean"
+                    },
+                    "appearance": {
+                        "$ref": "#/components/schemas/StatuspageAppearance",
+                        "description": "Light or dark mode of the public page. `system` follows each visitor's device setting."
                     },
                     "custom_css": {
                         "maxLength": 10000,
