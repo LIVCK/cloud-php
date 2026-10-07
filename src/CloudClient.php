@@ -57,7 +57,7 @@ use SensitiveParameter;
  */
 final class CloudClient implements CloudClientInterface
 {
-    public const string VERSION = '1.1.0';
+    public const string VERSION = '1.2.0';
 
     public const string USER_AGENT_PRODUCT = 'livck-cloud-php';
 
