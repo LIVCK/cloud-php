@@ -234,6 +234,73 @@ was not. The URL is a credential and is held like one: it shows in no
 dump, log line or error text, and a ping never carries the API token. `PingDetails` takes up to
 ten figures and the end of the job's log, cut to what LIVCK keeps.
 
+## Declaring heartbeats from code
+
+An application can name the heartbeats it expects and let LIVCK keep them in line, on every
+deploy. A declaration covers one application in one environment; LIVCK finds each heartbeat
+again by application, environment and key. A new key is created, a changed one is updated, an
+unchanged one is left alone, so the call is safe to repeat. The token needs `heartbeats.declare`
+and must see the whole organization.
+
+```php
+use LIVCK\Cloud\Builders\HeartbeatBuilder;
+use LIVCK\Cloud\Builders\HeartbeatDeclaration;
+use LIVCK\Cloud\Builders\HeartbeatSchedule;
+
+$result = $client->heartbeats()->declare(HeartbeatDeclaration::of('shop', 'production',
+    HeartbeatBuilder::schedule('export:nightly', HeartbeatSchedule::cron('0 3 * * *', 'Europe/Berlin'))
+        ->maxDuration(3600),
+    HeartbeatBuilder::queue('queue:default', HeartbeatSchedule::every(60)),
+));
+
+foreach ($result->pingUrls() as $key => $url) {
+    $secrets->put("heartbeat.{$key}", $url->reveal()); // where your jobs read it from
+}
+
+if (! $result->allExist()) {
+    // $result->notCreated->reason: service_limit, creation_rate or blocked
+}
+```
+
+Options you leave out keep the value the heartbeat has in LIVCK; `noMaxDuration()` removes the
+run time limit. The answer holds the values in effect: a period shorter than the plan allows is
+raised to its minimum. Ping URLs are `Secret`s, as everywhere in the SDK.
+
+- `notCreated` lists the new keys that could not be created because the plan is full
+  (`missing`), too many services were created lately (`retryAfter` seconds) or creating is
+  switched off. New heartbeats are created all together or not at all; the existing ones are
+  updated anyway and the call succeeds. Declare again once there is room.
+- `unlisted` names heartbeats of the same application and environment that the declaration
+  left out. **LIVCK never removes or pauses a heartbeat because a declaration no longer names
+  it**: it keeps expecting pings until you delete it (`services()->delete($unlisted->serviceId)`).
+
+Each declared heartbeat is a service that carries two system tags, `livck.app:<application>`
+and `livck.env:<environment>`: `ServiceQuery::make()->withTag('livck.app:shop')` lists an
+application's heartbeats. LIVCK maintains these tags, as it does the server agent's; they cannot
+be removed or deleted by hand. On the service, `heartbeat->declared` names the application,
+environment and key.
+
+A token that sees only part of the organization, because access areas limit what the member who
+created it sees, is refused with a `RestrictedViewException` (403). More abilities do not help:
+declare with a token created by a member who sees everything. A token without
+`heartbeats.declare` gets the plain `PermissionDeniedException`.
+
+```php
+use LIVCK\Cloud\Exceptions\PermissionDeniedException;
+use LIVCK\Cloud\Exceptions\RestrictedViewException;
+
+try {
+    $client->heartbeats()->declare($declaration);
+} catch (RestrictedViewException $e) {
+    // the token's view is limited: use a token of a member who sees the whole organization
+} catch (PermissionDeniedException $e) {
+    // the token lacks heartbeats.declare
+}
+```
+
+Two declarations of the same heartbeats at the same moment can end in a
+`HeartbeatDeclarationConflictException` (409, `isRetryable()` is true): send it again.
+
 ## History: checks, incidents, maintenance
 
 ```php
