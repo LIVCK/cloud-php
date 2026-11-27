@@ -17,6 +17,10 @@ namespace LIVCK\Cloud\Exceptions;
  *  - a POST whose Idempotency-Key is still being processed by the first request
  *    ({@see isIdempotencyKeyInProgress()}). The transport retries that one on its own
  *    after `Retry-After`; it only surfaces once the retries are spent.
+ *
+ * A heartbeat declaration that collided with another one is the subclass
+ * {@see HeartbeatDeclarationConflictException}. {@see isRetryable()} tells, for every 409, whether
+ * sending the same request again can succeed without changing anything first.
  */
 class ConflictException extends ApiException
 {
@@ -37,5 +41,15 @@ class ConflictException extends ApiException
     public function isIdempotencyKeyInProgress(): bool
     {
         return $this->response()->hasHeader('Retry-After');
+    }
+
+    /**
+     * Whether the same request, sent again unchanged, can succeed: true while the first request
+     * with this Idempotency-Key is still running, and for a heartbeat declaration that collided
+     * with another one. A state conflict or a missing confirmation needs a change first.
+     */
+    public function isRetryable(): bool
+    {
+        return $this->isIdempotencyKeyInProgress();
     }
 }

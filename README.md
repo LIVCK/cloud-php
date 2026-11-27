@@ -286,7 +286,7 @@ messages, dumps or log lines.
 | `RestrictedViewException` | 403 where the whole organization is needed and access areas limit what the token sees. |
 | `AuthenticationException` | 401: the token is unknown, revoked or expired. |
 | `NotFoundException` | 404: unknown, in another organization, or hidden from the token. |
-| `ConflictException` | 409: the resource's state does not allow the action. |
+| `ConflictException` | 409: the resource's state does not allow the action; `isRetryable()` when sending it again can succeed. |
 | `RateLimitException` | 429 once the retries are spent: `retryAfter()`. |
 | `ServerException` | 5xx; `ServiceUnavailableException` (503) adds `retryAfter()`. |
 | `TransportException` | No response at all (DNS, connection, TLS, timeout) after the retries. |

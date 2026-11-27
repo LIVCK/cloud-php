@@ -71,13 +71,15 @@ describe('by status', function (): void {
 
         expect($e->requiresConfirmation())->toBeTrue()
             ->and($e->isIdempotencyKeyInProgress())->toBeFalse()
+            ->and($e->isRetryable())->toBeFalse()
             ->and($e->body()['policies'])->toBe(['Night shift']);
 
         $plain = raise(MockResponse::error('The maintenance is not in a state that allows this transition.', 409));
 
         assert($plain instanceof ConflictException);
 
-        expect($plain->requiresConfirmation())->toBeFalse();
+        expect($plain->requiresConfirmation())->toBeFalse()
+            ->and($plain->isRetryable())->toBeFalse();
     });
 
     it('recognises the idempotency-in-progress 409 by its Retry-After', function (): void {
@@ -85,7 +87,8 @@ describe('by status', function (): void {
 
         assert($e instanceof ConflictException);
 
-        expect($e->isIdempotencyKeyInProgress())->toBeTrue();
+        expect($e->isIdempotencyKeyInProgress())->toBeTrue()
+            ->and($e->isRetryable())->toBeTrue();
     });
 
     it('maps 422 with field errors', function (): void {
