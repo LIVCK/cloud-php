@@ -282,7 +282,8 @@ messages, dumps or log lines.
 | `ValidationException` | 422: `errors()`, `firstError('field')`. Some plan limits land here, on their field. |
 | `PlanLimitException` | A quota of the plan is used up: `limitKey()`, `limit()`, `usage()`. |
 | `FeatureNotAvailableException` | The plan lacks the feature (`featureKey()`, e.g. `api_access`). |
-| `PermissionDeniedException` | 403: the token lacks the route's ability. |
+| `PermissionDeniedException` | 403: the token lacks the route's ability, or its view is too narrow for the action. |
+| `RestrictedViewException` | 403 where the whole organization is needed and access areas limit what the token sees. |
 | `AuthenticationException` | 401: the token is unknown, revoked or expired. |
 | `NotFoundException` | 404: unknown, in another organization, or hidden from the token. |
 | `ConflictException` | 409: the resource's state does not allow the action. |

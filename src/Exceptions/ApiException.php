@@ -42,7 +42,9 @@ class ApiException extends RuntimeException implements LivckCloudException
      *
      * The body decides first: a plan gate announces itself through `upsell.reason`
      * whatever status the endpoint chose (402 from the limit middleware, 403 from a
-     * service or custom-domain limit, 403 for a feature). Only then does the status.
+     * service or custom-domain limit, 403 for a feature). A 403 whose `code` is
+     * `restricted_view` is a token whose view is limited by access areas. Only then does
+     * the status; a `code` this SDK does not know changes nothing.
      */
     public static function fromResponse(Response $response): self
     {
@@ -53,6 +55,7 @@ class ApiException extends RuntimeException implements LivckCloudException
             self::upsellReasonOf($response) === 'feature' => new FeatureNotAvailableException($response),
             $status === 401 => new AuthenticationException($response),
             $status === 402 => new PlanLimitException($response),
+            $status === 403 && self::codeOf($response) === RestrictedViewException::CODE => new RestrictedViewException($response),
             $status === 403 => new PermissionDeniedException($response),
             $status === 404 => new NotFoundException($response),
             $status === 409 => new ConflictException($response),
@@ -185,6 +188,13 @@ class ApiException extends RuntimeException implements LivckCloudException
         $reason = $response->reasonPhrase();
 
         return $reason !== '' ? $reason : sprintf('HTTP %d', $response->status());
+    }
+
+    private static function codeOf(Response $response): ?string
+    {
+        $code = Json::tryDecode($response->body())['code'] ?? null;
+
+        return is_string($code) ? $code : null;
     }
 
     private static function upsellReasonOf(Response $response): ?string

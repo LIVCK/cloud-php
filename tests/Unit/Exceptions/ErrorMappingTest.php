@@ -11,6 +11,7 @@ use LIVCK\Cloud\Exceptions\NotFoundException;
 use LIVCK\Cloud\Exceptions\PermissionDeniedException;
 use LIVCK\Cloud\Exceptions\PlanLimitException;
 use LIVCK\Cloud\Exceptions\RateLimitException;
+use LIVCK\Cloud\Exceptions\RestrictedViewException;
 use LIVCK\Cloud\Exceptions\ServerException;
 use LIVCK\Cloud\Exceptions\ServiceUnavailableException;
 use LIVCK\Cloud\Exceptions\ValidationException;
@@ -226,5 +227,48 @@ describe('by body', function (): void {
         $e = raise(MockResponse::json(['message' => 'Forbidden.', 'upsell' => 'garbage'], 403));
 
         expect($e::class)->toBe(PermissionDeniedException::class);
+    });
+
+    it('maps a 403 with code restricted_view to RestrictedViewException, a permission-denied subtype', function (): void {
+        $e = raise(MockResponse::error('Declaring heartbeats requires a token that sees the whole organization.', 403, extra: [
+            'code' => 'restricted_view',
+        ]), 'POST', 'heartbeats/declare');
+
+        expect($e)->toBeInstanceOf(RestrictedViewException::class)
+            ->and($e)->toBeInstanceOf(PermissionDeniedException::class)
+            ->and($e)->not->toBeInstanceOf(FeatureNotAvailableException::class)
+            ->and($e->status())->toBe(403)
+            ->and($e->body()['code'])->toBe(RestrictedViewException::CODE);
+    });
+
+    it('keeps a 403 with an unknown or unreadable code a plain permission denial', function (mixed $code): void {
+        $e = raise(MockResponse::json(['message' => 'Forbidden.', 'code' => $code], 403));
+
+        expect($e::class)->toBe(PermissionDeniedException::class)
+            ->and($e->errorMessage())->toBe('Forbidden.');
+    })->with([
+        'unknown' => ['some_future_code'],
+        'not a string' => [403],
+        'null' => [null],
+        'an object' => [['restricted_view']],
+    ]);
+
+    it('reads restricted_view only on a 403', function (int $status, string $class): void {
+        $e = raise(MockResponse::json(['message' => 'No.', 'code' => 'restricted_view'], $status));
+
+        expect($e::class)->toBe($class);
+    })->with([
+        'conflict' => [409, ConflictException::class],
+        'validation' => [422, ValidationException::class],
+        'unauthenticated' => [401, AuthenticationException::class],
+    ]);
+
+    it('lets a plan gate win over a code', function (): void {
+        $e = raise(MockResponse::error('API access is available on the Team plan and above.', 403, extra: [
+            'upsell' => ['reason' => 'feature', 'key' => 'api_access'],
+            'code' => 'restricted_view',
+        ]));
+
+        expect($e)->toBeInstanceOf(FeatureNotAvailableException::class);
     });
 });
