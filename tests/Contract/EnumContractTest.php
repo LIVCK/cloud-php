@@ -12,6 +12,10 @@ use LIVCK\Cloud\Enums\ConditionOutcome;
 use LIVCK\Cloud\Enums\DnsRecordType;
 use LIVCK\Cloud\Enums\EnrollmentKeyStatus;
 use LIVCK\Cloud\Enums\EnrollmentKeyType;
+use LIVCK\Cloud\Enums\HeartbeatDeclarationOutcome;
+use LIVCK\Cloud\Enums\HeartbeatKind;
+use LIVCK\Cloud\Enums\HeartbeatNotCreatedReason;
+use LIVCK\Cloud\Enums\HeartbeatScheduleType;
 use LIVCK\Cloud\Enums\HttpAuthType;
 use LIVCK\Cloud\Enums\HttpMethod;
 use LIVCK\Cloud\Enums\IncidentKind;
@@ -104,6 +108,14 @@ describe('enum values', function (): void {
         'EnrollmentKeyType' => [EnrollmentKeyType::class, '/components/schemas/EnrollmentTokenType'],
         'EnrollmentKeyType (as a key reports it)' => [EnrollmentKeyType::class, '/components/schemas/EnrollmentKeyResource/properties/type'],
         'EnrollmentKeyStatus' => [EnrollmentKeyStatus::class, '/components/schemas/EnrollmentTokenStatus'],
+        'HeartbeatKind (declared)' => [HeartbeatKind::class, '/components/schemas/DeclareHeartbeatsRequest/properties/heartbeats/items/properties/kind'],
+        'HeartbeatKind (as the answer reports it)' => [HeartbeatKind::class, '/components/schemas/HeartbeatDeclarationResource/properties/heartbeats/items/properties/kind'],
+        'HeartbeatScheduleType (declared)' => [HeartbeatScheduleType::class, '/components/schemas/DeclareHeartbeatsRequest/properties/heartbeats/items/properties/schedule/properties/type'],
+        'HeartbeatScheduleType (as the answer reports it)' => [HeartbeatScheduleType::class, '/components/schemas/HeartbeatDeclarationResource/properties/heartbeats/items/properties/schedule/properties/type'],
+        'HeartbeatKind (on a service)' => [HeartbeatKind::class, '/components/schemas/ServiceResource/properties/heartbeat/properties/declared/properties/kind'],
+        'HeartbeatScheduleType (on a service)' => [HeartbeatScheduleType::class, '/components/schemas/ServiceResource/properties/heartbeat/properties/schedule/properties/type'],
+        'HeartbeatDeclarationOutcome' => [HeartbeatDeclarationOutcome::class, '/components/schemas/HeartbeatDeclarationResource/properties/heartbeats/items/properties/result'],
+        'HeartbeatNotCreatedReason' => [HeartbeatNotCreatedReason::class, '/components/schemas/HeartbeatDeclarationResource/properties/not_created/properties/reason'],
     ]);
 
     it('match the query parameter enums of the document', function (string $enum, string $operation, string $parameter): void {

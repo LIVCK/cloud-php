@@ -21,6 +21,8 @@ use LIVCK\Cloud\Ping\HeartbeatPingInterface;
 use LIVCK\Cloud\Resources\Discovery;
 use LIVCK\Cloud\Resources\EnrollmentKeys;
 use LIVCK\Cloud\Resources\EnrollmentKeysInterface;
+use LIVCK\Cloud\Resources\Heartbeats;
+use LIVCK\Cloud\Resources\HeartbeatsInterface;
 use LIVCK\Cloud\Resources\Incidents;
 use LIVCK\Cloud\Resources\IncidentsInterface;
 use LIVCK\Cloud\Resources\Maintenances;
@@ -92,6 +94,8 @@ final class CloudClient implements CloudClientInterface
     private ?Maintenances $maintenances = null;
 
     private ?EnrollmentKeys $enrollmentKeys = null;
+
+    private ?Heartbeats $heartbeats = null;
 
     private ?Discovery $discovery = null;
 
@@ -200,6 +204,11 @@ final class CloudClient implements CloudClientInterface
     public function enrollmentKeys(): EnrollmentKeysInterface
     {
         return $this->enrollmentKeys ??= new EnrollmentKeys($this->transport);
+    }
+
+    public function heartbeats(): HeartbeatsInterface
+    {
+        return $this->heartbeats ??= new Heartbeats($this->transport);
     }
 
     public function heartbeatPing(#[SensitiveParameter] string|Secret $pingUrl, float $timeout = HeartbeatPing::DEFAULT_TIMEOUT): HeartbeatPingInterface

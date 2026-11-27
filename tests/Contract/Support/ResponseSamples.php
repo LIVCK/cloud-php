@@ -11,6 +11,7 @@ use LIVCK\Cloud\Tests\Fixtures\CatalogFixture;
 use LIVCK\Cloud\Tests\Fixtures\CheckFixtures;
 use LIVCK\Cloud\Tests\Fixtures\DiscoveryFixtures;
 use LIVCK\Cloud\Tests\Fixtures\EnrollmentKeyFixtures;
+use LIVCK\Cloud\Tests\Fixtures\HeartbeatFixtures;
 use LIVCK\Cloud\Tests\Fixtures\IncidentFixtures;
 use LIVCK\Cloud\Tests\Fixtures\MaintenanceFixtures;
 use LIVCK\Cloud\Tests\Fixtures\ServiceFixtures;
@@ -44,7 +45,7 @@ final class ResponseSamples
     {
         $samples = [];
 
-        foreach ([...self::discovery(), ...self::tags(), ...self::services(), ...self::incidentsAndMaintenances(), ...self::statuspages(), ...self::enrollmentKeys()] as $sample) {
+        foreach ([...self::discovery(), ...self::tags(), ...self::services(), ...self::incidentsAndMaintenances(), ...self::statuspages(), ...self::enrollmentKeys(), ...self::heartbeats()] as $sample) {
             $samples[$sample->name] = $sample;
         }
 
@@ -209,6 +210,30 @@ final class ResponseSamples
             self::page('enrollment-keys.index.empty', 'GET /enrollment-keys', []),
             self::item('enrollment-keys.show', 'GET /enrollment-keys/{key}', EnrollmentKeyFixtures::exhausted()),
             self::item('enrollment-keys.store', 'POST /enrollment-keys', EnrollmentKeyFixtures::created(), 201),
+        ];
+    }
+
+    /**
+     * @return list<ResponseSample>
+     */
+    private static function heartbeats(): array
+    {
+        return [
+            self::item('heartbeats.declare', 'POST /heartbeats/declare', HeartbeatFixtures::result()),
+            self::item('heartbeats.declare.complete', 'POST /heartbeats/declare', HeartbeatFixtures::complete()),
+            self::item('heartbeats.declare.empty', 'POST /heartbeats/declare', [
+                'heartbeats' => [],
+                'not_created' => HeartbeatFixtures::nothingMissing(),
+                'unlisted' => [],
+                'skipped_tags' => [],
+                'counts' => ['created' => 0, 'updated' => 0, 'unchanged' => 0],
+            ]),
+            self::item('heartbeats.declare.creation-rate', 'POST /heartbeats/declare', HeartbeatFixtures::result([
+                'not_created' => ['keys' => ['App/Jobs/ImportCustomers'], 'reason' => 'creation_rate', 'missing' => null, 'retry_after' => 1800],
+            ])),
+            self::item('heartbeats.declare.no-ping-url', 'POST /heartbeats/declare', HeartbeatFixtures::result([
+                'heartbeats' => [HeartbeatFixtures::nightly(['ping_url' => null, 'max_duration_seconds' => 3600, 'paused' => true, 'status' => 'paused'])],
+            ])),
         ];
     }
 

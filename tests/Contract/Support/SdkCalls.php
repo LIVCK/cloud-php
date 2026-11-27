@@ -14,6 +14,9 @@ use LIVCK\Cloud\Builders\Conditions\IcmpCondition;
 use LIVCK\Cloud\Builders\Conditions\SslCondition;
 use LIVCK\Cloud\Builders\Conditions\TcpCondition;
 use LIVCK\Cloud\Builders\EnrollmentKeyBuilder;
+use LIVCK\Cloud\Builders\HeartbeatBuilder;
+use LIVCK\Cloud\Builders\HeartbeatDeclaration;
+use LIVCK\Cloud\Builders\HeartbeatSchedule;
 use LIVCK\Cloud\Builders\HttpAuth;
 use LIVCK\Cloud\Builders\HttpServiceBuilder;
 use LIVCK\Cloud\Builders\ServiceBuilder;
@@ -28,6 +31,7 @@ use LIVCK\Cloud\Enums\CheckResultStatus;
 use LIVCK\Cloud\Enums\ConditionOperator;
 use LIVCK\Cloud\Enums\DnsRecordType;
 use LIVCK\Cloud\Enums\EnrollmentKeyStatus;
+use LIVCK\Cloud\Enums\HeartbeatKind;
 use LIVCK\Cloud\Enums\HttpMethod;
 use LIVCK\Cloud\Enums\IncidentKind;
 use LIVCK\Cloud\Enums\IpVersion;
@@ -59,6 +63,7 @@ use LIVCK\Cloud\Tests\Fixtures\CatalogFixture;
 use LIVCK\Cloud\Tests\Fixtures\CheckFixtures;
 use LIVCK\Cloud\Tests\Fixtures\DiscoveryFixtures;
 use LIVCK\Cloud\Tests\Fixtures\EnrollmentKeyFixtures;
+use LIVCK\Cloud\Tests\Fixtures\HeartbeatFixtures;
 use LIVCK\Cloud\Tests\Fixtures\IncidentFixtures;
 use LIVCK\Cloud\Tests\Fixtures\MaintenanceFixtures;
 use LIVCK\Cloud\Tests\Fixtures\ServiceFixtures;
@@ -68,7 +73,7 @@ use LIVCK\Cloud\Tests\Fixtures\StatuspageFixtures;
  * Every public resource method of the SDK, called once with typical arguments: every
  * ServiceBuilder factory with its options and condition families, the update payloads,
  * the component kinds, the status page payloads, the tag calls, the lookups, the enrollment
- * key kinds, and every creating method once more with a caller-supplied Idempotency-Key. The request contract
+ * key kinds, the heartbeat declarations, and every creating method once more with a caller-supplied Idempotency-Key. The request contract
  * test checks what each call sends; the coverage test checks which operations they reach.
  */
 final class SdkCalls
@@ -108,6 +113,7 @@ final class SdkCalls
             ...self::components(),
             ...self::customDomains(),
             ...self::enrollmentKeys(),
+            ...self::heartbeats(),
         ] as $call) {
             $calls[$call->name] = $call;
         }
@@ -679,6 +685,41 @@ final class SdkCalls
             new SdkCall('enrollmentKeys.revoke', [MockResponse::noContent()], static function (CloudClient $client) use ($id): void {
                 $client->enrollmentKeys()->revoke($id);
             }),
+        ];
+    }
+
+    /**
+     * @return list<SdkCall>
+     */
+    private static function heartbeats(): array
+    {
+        $declared = [self::item(HeartbeatFixtures::result())];
+
+        $declare = static fn(string $name, HeartbeatDeclaration $declaration, ?string $idempotencyKey = null): SdkCall => new SdkCall(
+            'heartbeats.declare.' . $name,
+            $declared,
+            static fn(CloudClient $client): mixed => $client->heartbeats()->declare($declaration, $idempotencyKey),
+        );
+
+        $full = HeartbeatDeclaration::of(
+            'shop',
+            'production',
+            HeartbeatBuilder::schedule('export:nightly', HeartbeatSchedule::cron('0 3 * * *', 'Europe/Berlin'))
+                ->name('Nightly export')
+                ->grace(300)
+                ->tolerance(1)
+                ->maxDuration(3600),
+            HeartbeatBuilder::queue('queue:default', HeartbeatSchedule::every(60))->noMaxDuration(),
+            HeartbeatBuilder::job('App/Jobs/ImportCustomers', HeartbeatSchedule::every(86400)),
+            HeartbeatBuilder::custom('backup.db-1', HeartbeatSchedule::cron('*/15 * * * *')),
+            HeartbeatBuilder::of(HeartbeatKind::Schedule, 'report:weekly', HeartbeatSchedule::cron('0 6 * * 1', 'UTC')),
+        );
+
+        return [
+            $declare('minimal', HeartbeatDeclaration::of('shop', 'production', HeartbeatBuilder::schedule('export:nightly', HeartbeatSchedule::every(3600)))),
+            $declare('everyOption', $full),
+            $declare('empty', HeartbeatDeclaration::of('shop', 'staging')),
+            $declare('withKey', $full, 'deploy-4711-heartbeats'),
         ];
     }
 

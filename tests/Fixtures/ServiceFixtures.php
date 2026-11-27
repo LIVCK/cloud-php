@@ -49,9 +49,17 @@ final class ServiceFixtures
             'status_override' => null,
             'status_override_reason' => null,
             'status_override_at' => null,
+            'status_override_until' => null,
+            'status_override_source' => null,
             'favicon_url' => null,
             'is_paused' => false,
             'paused_reason' => null,
+            'paused_until' => null,
+            // The document declares it a plain string; a service that was resumed once.
+            'resumed_at' => '2026-09-01T08:00:00+00:00',
+            'paused_note' => null,
+            'resume_failed_at' => null,
+            'resume_failed_reason' => null,
             'configured_at' => '2026-08-14T02:40:55+00:00',
             'is_configured' => true,
             'uptime_30d' => 99.98,
@@ -61,6 +69,7 @@ final class ServiceFixtures
             'created_at' => '2026-08-14T02:40:55+00:00',
             'settings' => self::settings(),
             'agent' => null,
+            'heartbeat' => null,
             ...$overrides,
         ];
     }

@@ -49,7 +49,7 @@ it('carries exactly the server\'s values and survives an unknown one', function 
     'StatusOverride' => [StatusOverride::class, ['up', 'down', 'degraded', 'maintenance']],
     'PausedReason' => [PausedReason::class, ['manual', 'plan_limit', 'org_deleted', 'agent_limit', 'agent_uninstalled']],
     'ProbeRole' => [ProbeRole::class, ['full', 'reachability']],
-    'IncidentKind' => [IncidentKind::class, ['standard', 'agent_liveness', 'notice']],
+    'IncidentKind' => [IncidentKind::class, ['standard', 'agent_liveness', 'notice', 'domain']],
     'IncidentStatus' => [IncidentStatus::class, ['investigating', 'identified', 'monitoring', 'resolved']],
     'IncidentSeverity' => [IncidentSeverity::class, ['minor', 'major', 'critical']],
     'ServiceImpact' => [ServiceImpact::class, ['degraded', 'partial_outage', 'major_outage']],

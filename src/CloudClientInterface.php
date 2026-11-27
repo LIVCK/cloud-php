@@ -12,6 +12,7 @@ use LIVCK\Cloud\Http\Response;
 use LIVCK\Cloud\Ping\HeartbeatPing;
 use LIVCK\Cloud\Ping\HeartbeatPingInterface;
 use LIVCK\Cloud\Resources\EnrollmentKeysInterface;
+use LIVCK\Cloud\Resources\HeartbeatsInterface;
 use LIVCK\Cloud\Resources\IncidentsInterface;
 use LIVCK\Cloud\Resources\MaintenancesInterface;
 use LIVCK\Cloud\Resources\ServicesInterface;
@@ -61,6 +62,12 @@ interface CloudClientInterface
      * an end customer, carrying the customer's tag.
      */
     public function enrollmentKeys(): EnrollmentKeysInterface;
+
+    /**
+     * Heartbeats declared from code: an application names the heartbeats it expects per
+     * environment, LIVCK creates and aligns them and hands back their ping URLs.
+     */
+    public function heartbeats(): HeartbeatsInterface;
 
     /**
      * Pings for one heartbeat, sent to its ping URL and never with the API token. Nothing is
