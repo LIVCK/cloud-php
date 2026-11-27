@@ -17,8 +17,10 @@ enum TagSource: string implements ApiEnum
     case User = 'user';
 
     /**
-     * Derived by the server agent from host facts (`os`, `distro`, `arch`, `virt`, `agent`,
-     * `kernel`, `host`). Key and value are owned by the agent; only the color can be changed.
+     * Maintained by LIVCK: derived by the server agent from host facts (`os`, `distro`, `arch`,
+     * `virt`, `agent`, `kernel`, `host`), or set on a heartbeat declared from code
+     * (`livck.app:<application>`, `livck.env:<environment>`). Key and value are LIVCK's; only
+     * the color can be changed, and the tag cannot be removed from a service or deleted.
      */
     case System = 'system';
 

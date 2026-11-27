@@ -21,8 +21,9 @@ use LIVCK\Cloud\Query\TagQuery;
  * Abilities: reads need `services.view`, writes `services.edit`, deletion
  * `services.delete`. The plan caps the number of tags; a tag that would exceed the cap
  * is a {@see ValidationException} on `tags`, not a plan-limit exception. The keys `os`,
- * `distro`, `kernel`, `arch`, `virt`, `agent` and `host` belong to the server agent and
- * are rejected.
+ * `distro`, `kernel`, `arch`, `virt`, `agent` and `host` belong to the server agent, and
+ * every key starting with `livck.` belongs to LIVCK (`livck.app` and `livck.env` on declared
+ * heartbeats); they are rejected.
  */
 interface TagsInterface
 {

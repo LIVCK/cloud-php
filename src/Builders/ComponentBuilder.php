@@ -50,8 +50,9 @@ final readonly class ComponentBuilder
      * {@see syncNewVisible()} decides whether they are visible.
      *
      * A reseller with one tag per end customer (`customer:4711`) gets a page that keeps itself
-     * up to date. The tag must be one you created (the server agent's system tags are
-     * refused), and a synced group needs a spare nesting level below it.
+     * up to date. The tag must be one you created (system tags, which the server agent and
+     * heartbeat declarations set, are refused), and a synced group needs a spare nesting
+     * level below it.
      *
      * The group names one EXISTING tag by id (`sync_tag_id`), so unlike
      * {@see ServiceBuilder::tags()} this takes no names: a name such as `customer:4711` is

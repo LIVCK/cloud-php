@@ -40,7 +40,8 @@ use LIVCK\Cloud\Support\TagEntries;
  *    header can be changed without touching the others.
  *  - `tags` REPLACES the service's tags. A reseller who shares a service between several
  *    customer tags must send the whole set (`$service->tagIds()` plus the new one);
- *    {@see withoutTags()} clears them. Tags a server agent maintains stay either way.
+ *    {@see withoutTags()} clears them. System tags stay either way: those a server agent
+ *    maintains and the `livck.` tags of a declared heartbeat.
  */
 final readonly class UpdateService
 {
@@ -122,8 +123,8 @@ final readonly class UpdateService
     /**
      * The service's tags after the update: the WHOLE set, not an addition. Tag objects, tag ids
      * or tag names, in any mix, as in {@see ServiceBuilder::tags()}: a name that does not exist
-     * yet is created, an entry that looks like a tag id must name an existing tag. Tags the server
-     * agent maintains stay on the service either way.
+     * yet is created, an entry that looks like a tag id must name an existing tag. System tags (the
+     * server agent's, the `livck.` tags of a declared heartbeat) stay on the service either way.
      *
      * @throws InvalidArgumentException for a blank entry, before anything is sent
      */
@@ -132,7 +133,7 @@ final readonly class UpdateService
         return $this->withAttribute('tags', TagEntries::of(...$tags));
     }
 
-    /** Remove every tag (except those a server agent maintains). */
+    /** Remove every tag (except the system tags LIVCK maintains). */
     public function withoutTags(): self
     {
         return $this->withAttribute('tags', []);

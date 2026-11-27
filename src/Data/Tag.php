@@ -51,7 +51,10 @@ final readonly class Tag
         return $this->value !== null;
     }
 
-    /** Maintained by the server agent; key and value cannot be changed. */
+    /**
+     * Maintained by LIVCK (the server agent's host tags, the `livck.` tags of declared
+     * heartbeats); key and value cannot be changed.
+     */
     public function isSystem(): bool
     {
         return $this->source === TagSource::System;
