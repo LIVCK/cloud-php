@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace LIVCK\Cloud\Data;
 
+use LIVCK\Cloud\Data\Concerns\RedactsSecrets;
 use LIVCK\Cloud\Exceptions\UnexpectedResponseException;
 use LIVCK\Cloud\Support\Field;
 use LIVCK\Cloud\Support\Secret;
@@ -21,6 +22,8 @@ use SensitiveParameter;
  */
 final readonly class CreatedEnrollmentKey
 {
+    use RedactsSecrets;
+
     /**
      * @param Secret $token the key (`lve_…`), as `Authorization: Bearer` for the installer
      * @param Secret $installCommand the one-liner to run on the server, as root: installs the agent and enrolls it
@@ -46,28 +49,6 @@ final readonly class CreatedEnrollmentKey
 
         unset($data['token'], $data['install_command']);
 
-        return new self(EnrollmentKey::fromArray(self::withoutKey($data, $token)), new Secret($token), new Secret($installCommand));
-    }
-
-    /**
-     * The payload with every other text that carries the key redacted, so that a field the
-     * server adds later (another install command, say) cannot leak it through `$key->raw`.
-     *
-     * @template K of array-key
-     *
-     * @param array<K, mixed> $data
-     * @return array<K, mixed>
-     */
-    private static function withoutKey(#[SensitiveParameter] array $data, #[SensitiveParameter] string $token): array
-    {
-        foreach ($data as $field => $value) {
-            if (is_string($value) && str_contains($value, $token)) {
-                $data[$field] = '[redacted]';
-            } elseif (is_array($value)) {
-                $data[$field] = self::withoutKey($value, $token);
-            }
-        }
-
-        return $data;
+        return new self(EnrollmentKey::fromArray(self::redacted($data, $token)), new Secret($token), new Secret($installCommand));
     }
 }
