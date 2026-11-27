@@ -113,6 +113,12 @@ range are checked before sending, and every problem is listed in one
 stay the server's and come back as a `ValidationException` on the field. For options newer
 than this SDK, `config()`, `setting()`, `attribute()` and `Condition::custom()` send any key.
 
+Two kinds of service carry a block of their own, null for every other type: a server's `agent`
+([Servers and enrollment keys](#servers-and-enrollment-keys)) and a heartbeat's `heartbeat`, which
+holds its schedule, grace, tolerance, maximum run time, last ping and, in `declared`, the
+application, environment and key that declare it from code (null for a heartbeat created by
+hand). The ping URL is never part of a service.
+
 ## Updating a service
 
 `UpdateService` sends only what you set. `settings.config` is merged per key, and a key you

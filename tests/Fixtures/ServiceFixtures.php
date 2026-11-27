@@ -19,6 +19,8 @@ final class ServiceFixtures
 
     public const string AGENT_ID = 'Ag3ntSrv1b2C3d4E5f6G7';
 
+    public const string HEARTBEAT_ID = HeartbeatFixtures::NIGHTLY_ID;
+
     /** Every host key of the metric catalog, as the current figures list them. */
     public const array HOST_METRIC_KEYS = [
         'sys.cpu.total_pct', 'sys.cpu.user_pct', 'sys.cpu.system_pct', 'sys.cpu.iowait_pct', 'sys.cpu.steal_pct',
@@ -130,6 +132,73 @@ final class ServiceFixtures
             'settings' => self::settings(['assigned_probes' => null, 'probe_roles' => null, 'config' => []]),
             'agent' => self::agent($agent),
             ...$overrides,
+        ]);
+    }
+
+    /**
+     * A `heartbeat` service declared from code: no target, no settings, the schedule in its
+     * `heartbeat` block and the two system tags a declaration sets.
+     *
+     * @param array<string, mixed> $heartbeat overrides of the heartbeat block
+     * @param array<string, mixed> $overrides overrides of the service
+     * @return array<string, mixed>
+     */
+    public static function heartbeatPayload(array $heartbeat = [], array $overrides = []): array
+    {
+        return self::payload([
+            'id' => self::HEARTBEAT_ID,
+            'name' => 'export:nightly',
+            'check_type' => 'heartbeat',
+            'check_type_label' => 'Heartbeat',
+            'target' => null,
+            'status' => 'up',
+            'effective_status' => 'up',
+            'uptime_30d' => 100,
+            'avg_response_ms' => null,
+            'tags' => [
+                ['id' => 'L1vckApp5h0pB2c3D4e5F', 'key' => 'livck.app', 'value' => 'shop', 'color' => '#22c55e', 'label' => 'livck.app:shop', 'source' => 'system'],
+                ['id' => 'L1vckEnvPr0dB2c3D4e5F', 'key' => 'livck.env', 'value' => 'production', 'color' => '#ef4444', 'label' => 'livck.env:production', 'source' => 'system'],
+            ],
+            'last_check_at' => null,
+            'settings' => null,
+            'heartbeat' => self::heartbeat($heartbeat),
+            ...$overrides,
+        ]);
+    }
+
+    /**
+     * The heartbeat block of a declared `heartbeat` service, as `ServiceResource::heartbeatBlock()`
+     * writes it.
+     *
+     * @param array<string, mixed> $overrides
+     * @return array<string, mixed>
+     */
+    public static function heartbeat(array $overrides = []): array
+    {
+        return [
+            'schedule' => ['type' => 'simple', 'period_seconds' => 300, 'expression' => null, 'timezone' => 'UTC'],
+            'grace_seconds' => 60,
+            'schedule_tolerance' => 2,
+            'max_duration_seconds' => 900,
+            'last_ping_at' => '2026-11-27T08:15:00+00:00',
+            'declared' => ['app' => 'shop', 'environment' => 'production', 'key' => 'export:nightly', 'kind' => 'schedule'],
+            ...$overrides,
+        ];
+    }
+
+    /**
+     * The heartbeat block of a heartbeat created by hand on a cron schedule that has not pinged yet.
+     *
+     * @return array<string, mixed>
+     */
+    public static function heartbeatByHand(): array
+    {
+        return self::heartbeat([
+            'schedule' => ['type' => 'cron', 'period_seconds' => null, 'expression' => '0 3 * * *', 'timezone' => 'Europe/Berlin'],
+            'schedule_tolerance' => 1,
+            'max_duration_seconds' => null,
+            'last_ping_at' => null,
+            'declared' => null,
         ]);
     }
 
