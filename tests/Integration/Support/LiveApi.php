@@ -16,9 +16,9 @@ use SensitiveParameter;
  * `LIVCK_CLOUD_TOKEN` is the token every test needs; without it the suite is skipped.
  * `LIVCK_CLOUD_BASE_URI` points at a dev stack (production unless set). The scenario suite
  * additionally reads the tokens of a read-only key, a key without the delete abilities for
- * incidents and maintenances, a key of a second organization and a key of an organization
- * whose plan has no API access; a scenario that needs one of them names it in its skip
- * condition.
+ * incidents and maintenances, a key of a second organization, a key of an organization
+ * whose plan has no API access and a key of a member whose view access areas limit; a
+ * scenario that needs one of them names it in its skip condition or notes its absence.
  *
  * Every client built here shares one {@see WaitLog} (every retry wait the SDK performs) and
  * one {@see AttemptLog} (every attempt the transport logs), so a scenario can prove that a
@@ -35,6 +35,9 @@ final class LiveApi
     public const string OTHER_ORG_TOKEN_VARIABLE = 'LIVCK_CLOUD_TOKEN_OTHER_ORG';
 
     public const string NO_API_TOKEN_VARIABLE = 'LIVCK_CLOUD_TOKEN_NO_API';
+
+    /** A token of a member whose view access areas limit, in the main organization (optional). */
+    public const string RESTRICTED_VIEW_TOKEN_VARIABLE = 'LIVCK_CLOUD_TOKEN_RESTRICTED_VIEW';
 
     public const string BASE_URI_VARIABLE = 'LIVCK_CLOUD_BASE_URI';
 
