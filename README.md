@@ -195,6 +195,39 @@ servers (images, cloud-init), `revoke()` stops a key while its servers keep runn
 server's `agent` holds its state and host facts; `agentMetrics()` returns its latest figures by
 metric key and `agentMetricsHistory()` their course over a range.
 
+## Heartbeat pings
+
+A heartbeat watches a job from the inside: the job calls the heartbeat's ping URL
+(`https://ping.livck.cloud/<token>`) and LIVCK raises an incident when a ping fails or does not
+come in time. The ping URL is all it needs, no API token:
+
+```php
+use LIVCK\Cloud\Ping\HeartbeatPing;
+use LIVCK\Cloud\Ping\PingDetails;
+
+$ping = new HeartbeatPing((string) getenv('BACKUP_PING_URL')); // or $client->heartbeatPing($url)
+
+$ping->start();
+exec('/usr/local/bin/backup.sh 2>&1', $output, $code);
+
+$result = $ping->exitCode($code, PingDetails::make()
+    ->withMetric('lines', count($output))
+    ->withLog(implode("\n", $output)));
+
+if ($result->unknownUrl) {
+    // the URL was regenerated or the heartbeat deleted: update the job's configuration
+}
+```
+
+`success()`, `fail()` and `exitCode()` (0 is a success) end a run, `start()` begins one. A ping
+never throws and never retries: a timeout (3 seconds by default), a lost connection or an error
+status comes back as a `PingResult` with `sent`, `status`, `unknownUrl`, `noResponse` and
+`error`, so a ping cannot break the job it reports on. `noResponse` is true when the ping went
+out and no answer came back (DNS, connection, timeout): the URL may be fine, the way to LIVCK
+was not. The URL is a credential and is held like one: it shows in no
+dump, log line or error text, and a ping never carries the API token. `PingDetails` takes up to
+ten figures and the end of the job's log, cut to what LIVCK keeps.
+
 ## History: checks, incidents, maintenance
 
 ```php
