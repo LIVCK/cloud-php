@@ -16,6 +16,8 @@ use LIVCK\Cloud\Http\RetryPolicy;
 use LIVCK\Cloud\Http\Sleeper;
 use LIVCK\Cloud\Http\SystemSleeper;
 use LIVCK\Cloud\Http\Transport;
+use LIVCK\Cloud\Ping\HeartbeatPing;
+use LIVCK\Cloud\Ping\HeartbeatPingInterface;
 use LIVCK\Cloud\Resources\Discovery;
 use LIVCK\Cloud\Resources\EnrollmentKeys;
 use LIVCK\Cloud\Resources\EnrollmentKeysInterface;
@@ -29,6 +31,7 @@ use LIVCK\Cloud\Resources\Statuspages;
 use LIVCK\Cloud\Resources\StatuspagesInterface;
 use LIVCK\Cloud\Resources\Tags;
 use LIVCK\Cloud\Resources\TagsInterface;
+use LIVCK\Cloud\Support\Secret;
 use LIVCK\Cloud\Testing\FakeHttpClient;
 use LIVCK\Cloud\Testing\MockResponse;
 use Psr\Http\Client\ClientInterface;
@@ -197,6 +200,21 @@ final class CloudClient implements CloudClientInterface
     public function enrollmentKeys(): EnrollmentKeysInterface
     {
         return $this->enrollmentKeys ??= new EnrollmentKeys($this->transport);
+    }
+
+    public function heartbeatPing(#[SensitiveParameter] string|Secret $pingUrl, float $timeout = HeartbeatPing::DEFAULT_TIMEOUT): HeartbeatPingInterface
+    {
+        // A client the SDK built carries the API timeouts; the ping builds its own short one.
+        // A client passed in is the caller's HTTP stack (proxy, TLS, a fake) and is used as is.
+        return new HeartbeatPing(
+            $pingUrl,
+            $timeout,
+            $this->ownsHttpClient ? null : $this->httpClient,
+            $this->requestFactory,
+            $this->streamFactory,
+            $this->options->logger,
+            $this->options->userAgentSuffix,
+        );
     }
 
     public function me(): Me
