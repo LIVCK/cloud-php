@@ -25,6 +25,12 @@ enum IncidentKind: string implements ApiEnum
      */
     case Notice = 'notice';
 
+    /**
+     * A watched domain is gone or about to be (not in the zone, held, being deleted). Raised
+     * by the domain checks, never published, and without effect on availability figures.
+     */
+    case Domain = 'domain';
+
     /** A value this SDK version does not know; the raw payload keeps the original. */
     case Unrecognized = '__unrecognized__';
 }

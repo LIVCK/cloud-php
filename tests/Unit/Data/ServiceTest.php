@@ -4,16 +4,23 @@ declare(strict_types=1);
 
 use LIVCK\Cloud\Data\AgentIps;
 use LIVCK\Cloud\Data\AgentUpdateSettings;
+use LIVCK\Cloud\Data\DeclaredSchedule;
+use LIVCK\Cloud\Data\HeartbeatOrigin;
 use LIVCK\Cloud\Data\ObservedIp;
 use LIVCK\Cloud\Data\Service;
 use LIVCK\Cloud\Data\ServiceAgent;
+use LIVCK\Cloud\Data\ServiceHeartbeat;
 use LIVCK\Cloud\Data\ServiceSettings;
+use LIVCK\Cloud\Data\Tag;
 use LIVCK\Cloud\Enums\AgentState;
 use LIVCK\Cloud\Enums\CheckType;
 use LIVCK\Cloud\Enums\ConditionOperator;
 use LIVCK\Cloud\Enums\ConditionOutcome;
+use LIVCK\Cloud\Enums\HeartbeatKind;
+use LIVCK\Cloud\Enums\HeartbeatScheduleType;
 use LIVCK\Cloud\Enums\IpFamily;
 use LIVCK\Cloud\Enums\ProbeRole;
+use LIVCK\Cloud\Enums\TagSource;
 use LIVCK\Cloud\Exceptions\UnexpectedResponseException;
 use LIVCK\Cloud\Support\KeepSecret;
 use LIVCK\Cloud\Tests\Fixtures\EnrollmentKeyFixtures;
@@ -237,4 +244,93 @@ describe('agent', function (): void {
                 ->toThrow(UnexpectedResponseException::class, $field);
         }
     });
+});
+
+describe('heartbeat', function (): void {
+    it('reads the schedule, bounds, last ping and the application that declares it', function (): void {
+        $service = Service::fromArray(ServiceFixtures::heartbeatPayload());
+        $heartbeat = $service->heartbeat;
+
+        expect($service->checkType)->toBe(CheckType::Heartbeat)
+            ->and($service->target)->toBeNull()
+            ->and($service->settings)->toBeNull()
+            ->and($service->agent)->toBeNull()
+            ->and($service->isMonitoredByProbes())->toBeFalse()
+            ->and($heartbeat)->toBeInstanceOf(ServiceHeartbeat::class)
+            ->and($heartbeat?->schedule)->toBeInstanceOf(DeclaredSchedule::class)
+            ->and($heartbeat?->schedule->type)->toBe(HeartbeatScheduleType::Simple)
+            ->and($heartbeat?->schedule->periodSeconds)->toBe(300)
+            ->and($heartbeat?->schedule->expression)->toBeNull()
+            ->and($heartbeat?->schedule->timezone)->toBe('UTC')
+            ->and($heartbeat?->graceSeconds)->toBe(60)
+            ->and($heartbeat?->scheduleTolerance)->toBe(2)
+            ->and($heartbeat?->maxDurationSeconds)->toBe(900)
+            ->and($heartbeat?->lastPingAt?->format(DATE_ATOM))->toBe('2026-11-27T08:15:00+00:00')
+            ->and($heartbeat?->isDeclared())->toBeTrue()
+            ->and($heartbeat?->declared)->toBeInstanceOf(HeartbeatOrigin::class)
+            ->and($heartbeat?->declared?->app)->toBe('shop')
+            ->and($heartbeat?->declared?->environment)->toBe('production')
+            ->and($heartbeat?->declared?->key)->toBe('export:nightly')
+            ->and($heartbeat?->declared?->kind)->toBe(HeartbeatKind::Schedule)
+            ->and($heartbeat?->declared?->raw)->toBe(ServiceFixtures::heartbeat()['declared'])
+            ->and($heartbeat?->raw)->toBe(ServiceFixtures::heartbeat())
+            ->and($service->raw['heartbeat'])->toBe(ServiceFixtures::heartbeat());
+    });
+
+    it('carries the system tags of the declaration', function (): void {
+        $service = Service::fromArray(ServiceFixtures::heartbeatPayload());
+
+        expect($service->hasTag('livck.app:shop'))->toBeTrue()
+            ->and($service->hasTag('livck.env:production'))->toBeTrue()
+            ->and(array_map(static fn(Tag $tag): TagSource => $tag->source, $service->tags ?? []))->toBe([TagSource::System, TagSource::System])
+            ->and(array_map(static fn(Tag $tag): bool => $tag->isSystem(), $service->tags ?? []))->toBe([true, true]);
+    });
+
+    it('reads a heartbeat created by hand on a cron schedule that has not pinged yet', function (): void {
+        $heartbeat = Service::fromArray(ServiceFixtures::heartbeatPayload(ServiceFixtures::heartbeatByHand()))->heartbeat;
+
+        expect($heartbeat?->schedule->isCron())->toBeTrue()
+            ->and($heartbeat?->schedule->periodSeconds)->toBeNull()
+            ->and($heartbeat?->schedule->expression)->toBe('0 3 * * *')
+            ->and($heartbeat?->schedule->timezone)->toBe('Europe/Berlin')
+            ->and($heartbeat?->scheduleTolerance)->toBe(1)
+            ->and($heartbeat?->maxDurationSeconds)->toBeNull()
+            ->and($heartbeat?->lastPingAt)->toBeNull()
+            ->and($heartbeat?->declared)->toBeNull()
+            ->and($heartbeat?->isDeclared())->toBeFalse();
+    });
+
+    it('is null for every other check type, and when the server leaves the key out', function (): void {
+        $listed = ServiceFixtures::heartbeatPayload();
+        unset($listed['heartbeat']);
+
+        expect(Service::fromArray(ServiceFixtures::payload())->heartbeat)->toBeNull()
+            ->and(Service::fromArray(ServiceFixtures::agentPayload())->heartbeat)->toBeNull()
+            ->and(Service::fromArray($listed)->heartbeat)->toBeNull();
+    });
+
+    it('keeps an unknown kind or schedule type readable', function (): void {
+        $heartbeat = Service::fromArray(ServiceFixtures::heartbeatPayload([
+            'schedule' => ['type' => 'rrule', 'period_seconds' => null, 'expression' => 'FREQ=DAILY', 'timezone' => 'UTC'],
+            'declared' => ['app' => 'shop', 'environment' => 'production', 'key' => 'export:nightly', 'kind' => 'stream'],
+        ]))->heartbeat;
+
+        expect($heartbeat?->schedule->type)->toBe(HeartbeatScheduleType::Unrecognized)
+            ->and($heartbeat?->schedule->raw['type'])->toBe('rrule')
+            ->and($heartbeat?->declared?->kind)->toBe(HeartbeatKind::Unrecognized)
+            ->and($heartbeat?->declared?->raw['kind'])->toBe('stream');
+    });
+
+    it('fails loudly on a heartbeat block that drifted from the documented shape', function (string $key, mixed $value, string $field): void {
+        expect(fn(): Service => Service::fromArray(ServiceFixtures::heartbeatPayload([$key => $value])))
+            ->toThrow(UnexpectedResponseException::class, $field);
+    })->with([
+        'grace as a string' => ['grace_seconds', '60', 'grace_seconds'],
+        'no tolerance' => ['schedule_tolerance', null, 'schedule_tolerance'],
+        'no schedule' => ['schedule', null, 'schedule'],
+        'schedule without a timezone' => ['schedule', ['type' => 'simple', 'period_seconds' => 300, 'expression' => null], 'timezone'],
+        'a last ping that is no instant' => ['last_ping_at', 'yesterday', 'last_ping_at'],
+        'declared without its key' => ['declared', ['app' => 'shop', 'environment' => 'production', 'kind' => 'schedule'], 'key'],
+        'declared as a list' => ['declared', ['shop', 'production'], 'declared'],
+    ]);
 });

@@ -12,7 +12,8 @@ use LIVCK\Cloud\Exceptions\InvalidArgumentException;
  *
  *     UpdateTag::make()->withValue('4712')->withColor('#22c55e')
  *
- * A system tag (agent-derived) accepts a new color only; renaming it is a 422.
+ * A system tag (set by the server agent or a heartbeat declaration) accepts a new color only;
+ * renaming it is a 422.
  */
 final readonly class UpdateTag
 {

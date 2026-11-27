@@ -113,6 +113,12 @@ range are checked before sending, and every problem is listed in one
 stay the server's and come back as a `ValidationException` on the field. For options newer
 than this SDK, `config()`, `setting()`, `attribute()` and `Condition::custom()` send any key.
 
+Two kinds of service carry a block of their own, null for every other type: a server's `agent`
+([Servers and enrollment keys](#servers-and-enrollment-keys)) and a heartbeat's `heartbeat`, which
+holds its schedule, grace, tolerance, maximum run time, last ping and, in `declared`, the
+application, environment and key that declare it from code (null for a heartbeat created by
+hand). The ping URL is never part of a service.
+
 ## Updating a service
 
 `UpdateService` sends only what you set. `settings.config` is merged per key, and a key you
@@ -195,6 +201,106 @@ servers (images, cloud-init), `revoke()` stops a key while its servers keep runn
 server's `agent` holds its state and host facts; `agentMetrics()` returns its latest figures by
 metric key and `agentMetricsHistory()` their course over a range.
 
+## Heartbeat pings
+
+A heartbeat watches a job from the inside: the job calls the heartbeat's ping URL
+(`https://ping.livck.cloud/<token>`) and LIVCK raises an incident when a ping fails or does not
+come in time. The ping URL is all it needs, no API token:
+
+```php
+use LIVCK\Cloud\Ping\HeartbeatPing;
+use LIVCK\Cloud\Ping\PingDetails;
+
+$ping = new HeartbeatPing((string) getenv('BACKUP_PING_URL')); // or $client->heartbeatPing($url)
+
+$ping->start();
+exec('/usr/local/bin/backup.sh 2>&1', $output, $code);
+
+$result = $ping->exitCode($code, PingDetails::make()
+    ->withMetric('lines', count($output))
+    ->withLog(implode("\n", $output)));
+
+if ($result->unknownUrl) {
+    // the URL was regenerated or the heartbeat deleted: update the job's configuration
+}
+```
+
+`success()`, `fail()` and `exitCode()` (0 is a success) end a run, `start()` begins one. A ping
+never throws and never retries: a timeout (3 seconds by default), a lost connection or an error
+status comes back as a `PingResult` with `sent`, `status`, `unknownUrl`, `noResponse` and
+`error`, so a ping cannot break the job it reports on. `noResponse` is true when the ping went
+out and no answer came back (DNS, connection, timeout): the URL may be fine, the way to LIVCK
+was not. The URL is a credential and is held like one: it shows in no
+dump, log line or error text, and a ping never carries the API token. `PingDetails` takes up to
+ten figures and the end of the job's log, cut to what LIVCK keeps.
+
+## Declaring heartbeats from code
+
+An application can name the heartbeats it expects and let LIVCK keep them in line, on every
+deploy. A declaration covers one application in one environment; LIVCK finds each heartbeat
+again by application, environment and key. A new key is created, a changed one is updated, an
+unchanged one is left alone, so the call is safe to repeat. The token needs `heartbeats.declare`
+and must see the whole organization.
+
+```php
+use LIVCK\Cloud\Builders\HeartbeatBuilder;
+use LIVCK\Cloud\Builders\HeartbeatDeclaration;
+use LIVCK\Cloud\Builders\HeartbeatSchedule;
+
+$result = $client->heartbeats()->declare(HeartbeatDeclaration::of('shop', 'production',
+    HeartbeatBuilder::schedule('export:nightly', HeartbeatSchedule::cron('0 3 * * *', 'Europe/Berlin'))
+        ->maxDuration(3600),
+    HeartbeatBuilder::queue('queue:default', HeartbeatSchedule::every(60)),
+));
+
+foreach ($result->pingUrls() as $key => $url) {
+    $secrets->put("heartbeat.{$key}", $url->reveal()); // where your jobs read it from
+}
+
+if (! $result->allExist()) {
+    // $result->notCreated->reason: service_limit, creation_rate or blocked
+}
+```
+
+Options you leave out keep the value the heartbeat has in LIVCK; `noMaxDuration()` removes the
+run time limit. The answer holds the values in effect: a period shorter than the plan allows is
+raised to its minimum. Ping URLs are `Secret`s, as everywhere in the SDK.
+
+- `notCreated` lists the new keys that could not be created because the plan is full
+  (`missing`), too many services were created lately (`retryAfter` seconds) or creating is
+  switched off. New heartbeats are created all together or not at all; the existing ones are
+  updated anyway and the call succeeds. Declare again once there is room.
+- `unlisted` names heartbeats of the same application and environment that the declaration
+  left out. **LIVCK never removes or pauses a heartbeat because a declaration no longer names
+  it**: it keeps expecting pings until you delete it (`services()->delete($unlisted->serviceId)`).
+
+Each declared heartbeat is a service that carries two system tags, `livck.app:<application>`
+and `livck.env:<environment>`: `ServiceQuery::make()->withTag('livck.app:shop')` lists an
+application's heartbeats. LIVCK maintains these tags, as it does the server agent's; they cannot
+be removed or deleted by hand. On the service, `heartbeat->declared` names the application,
+environment and key.
+
+A token that sees only part of the organization, because access areas limit what the member who
+created it sees, is refused with a `RestrictedViewException` (403). More abilities do not help:
+declare with a token created by a member who sees everything. A token without
+`heartbeats.declare` gets the plain `PermissionDeniedException`.
+
+```php
+use LIVCK\Cloud\Exceptions\PermissionDeniedException;
+use LIVCK\Cloud\Exceptions\RestrictedViewException;
+
+try {
+    $client->heartbeats()->declare($declaration);
+} catch (RestrictedViewException $e) {
+    // the token's view is limited: use a token of a member who sees the whole organization
+} catch (PermissionDeniedException $e) {
+    // the token lacks heartbeats.declare
+}
+```
+
+Two declarations of the same heartbeats at the same moment can end in a
+`HeartbeatDeclarationConflictException` (409, `isRetryable()` is true): send it again.
+
 ## History: checks, incidents, maintenance
 
 ```php
@@ -249,10 +355,11 @@ messages, dumps or log lines.
 | `ValidationException` | 422: `errors()`, `firstError('field')`. Some plan limits land here, on their field. |
 | `PlanLimitException` | A quota of the plan is used up: `limitKey()`, `limit()`, `usage()`. |
 | `FeatureNotAvailableException` | The plan lacks the feature (`featureKey()`, e.g. `api_access`). |
-| `PermissionDeniedException` | 403: the token lacks the route's ability. |
+| `PermissionDeniedException` | 403: the token lacks the route's ability, or its view is too narrow for the action. |
+| `RestrictedViewException` | 403 where the whole organization is needed and access areas limit what the token sees. |
 | `AuthenticationException` | 401: the token is unknown, revoked or expired. |
 | `NotFoundException` | 404: unknown, in another organization, or hidden from the token. |
-| `ConflictException` | 409: the resource's state does not allow the action. |
+| `ConflictException` | 409: the resource's state does not allow the action; `isRetryable()` when sending it again can succeed. |
 | `RateLimitException` | 429 once the retries are spent: `retryAfter()`. |
 | `ServerException` | 5xx; `ServiceUnavailableException` (503) adds `retryAfter()`. |
 | `TransportException` | No response at all (DNS, connection, TLS, timeout) after the retries. |

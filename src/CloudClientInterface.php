@@ -9,13 +9,18 @@ use LIVCK\Cloud\Data\Me;
 use LIVCK\Cloud\Data\Probe;
 use LIVCK\Cloud\Http\Request;
 use LIVCK\Cloud\Http\Response;
+use LIVCK\Cloud\Ping\HeartbeatPing;
+use LIVCK\Cloud\Ping\HeartbeatPingInterface;
 use LIVCK\Cloud\Resources\EnrollmentKeysInterface;
+use LIVCK\Cloud\Resources\HeartbeatsInterface;
 use LIVCK\Cloud\Resources\IncidentsInterface;
 use LIVCK\Cloud\Resources\MaintenancesInterface;
 use LIVCK\Cloud\Resources\ServicesInterface;
 use LIVCK\Cloud\Resources\StatuspagesInterface;
 use LIVCK\Cloud\Resources\TagsInterface;
+use LIVCK\Cloud\Support\Secret;
 use Psr\Http\Client\ClientInterface;
+use SensitiveParameter;
 
 /**
  * What application code depends on. Resources are methods (not properties) so that a
@@ -57,6 +62,24 @@ interface CloudClientInterface
      * an end customer, carrying the customer's tag.
      */
     public function enrollmentKeys(): EnrollmentKeysInterface;
+
+    /**
+     * Heartbeats declared from code: an application names the heartbeats it expects per
+     * environment, LIVCK creates and aligns them and hands back their ping URLs.
+     */
+    public function heartbeats(): HeartbeatsInterface;
+
+    /**
+     * Pings for one heartbeat, sent to its ping URL and never with the API token. Nothing is
+     * sent until a signal is called, and no signal throws (see {@see HeartbeatPing}).
+     *
+     * Uses the HTTP client passed to this client, with its own settings; when the SDK built
+     * the client, the ping builds one of its own with `$timeout`. A new object on every call.
+     *
+     * @param string|Secret $pingUrl the heartbeat's ping URL, `https://ping.livck.cloud/<token>`
+     * @param float $timeout seconds for the whole request, when the ping builds its own client
+     */
+    public function heartbeatPing(#[SensitiveParameter] string|Secret $pingUrl, float $timeout = HeartbeatPing::DEFAULT_TIMEOUT): HeartbeatPingInterface;
 
     /**
      * The calling token: type, abilities, organization and rate limit (`GET /v1/me`).

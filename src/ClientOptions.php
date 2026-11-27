@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace LIVCK\Cloud;
 
 use LIVCK\Cloud\Exceptions\InvalidArgumentException;
+use LIVCK\Cloud\Support\LoopbackHost;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
@@ -140,7 +141,7 @@ final readonly class ClientOptions
 
         $scheme = strtolower($parts['scheme']);
 
-        if ($scheme !== 'https' && ($scheme !== 'http' || !$this->isLoopback($parts['host']))) {
+        if ($scheme !== 'https' && ($scheme !== 'http' || !LoopbackHost::matches($parts['host']))) {
             throw new InvalidArgumentException(
                 'The base URI must use https. Plain http is accepted for loopback hosts only '
                 . '(localhost, *.localhost, 127.0.0.0/8, ::1), so a token never travels unencrypted by accident.',
@@ -148,25 +149,6 @@ final readonly class ClientOptions
         }
 
         return rtrim($baseUri, '/');
-    }
-
-    private function isLoopback(string $host): bool
-    {
-        $host = strtolower(trim($host, '[]'));
-
-        if ($host === 'localhost' || str_ends_with($host, '.localhost')) {
-            return true;
-        }
-
-        if (filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false) {
-            return str_starts_with($host, '127.');
-        }
-
-        if (filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) !== false) {
-            return inet_pton($host) === inet_pton('::1');
-        }
-
-        return false;
     }
 
     private function assertHeaderValue(string $value, string $option): void

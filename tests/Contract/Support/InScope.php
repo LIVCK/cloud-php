@@ -80,6 +80,9 @@ final class InScope
             'POST /enrollment-keys',
             'GET /enrollment-keys/{key}',
             'DELETE /enrollment-keys/{key}',
+
+            // Heartbeats declared from code
+            'POST /heartbeats/declare',
         ];
     }
 }

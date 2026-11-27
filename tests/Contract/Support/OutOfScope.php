@@ -28,6 +28,10 @@ final class OutOfScope
 
     private const string MAINTENANCE_WRITES = 'Maintenance windows are read-only in the first SDK release; scheduling and driving them follows together with the incident writes.';
 
+    private const string RECURRING_MAINTENANCES = 'Recurring maintenances (rules, exceptions, running windows) are maintenance writes; they are set up in the console, by Terraform or over the API directly.';
+
+    private const string DOMAIN_WATCHES = 'Domain monitoring (registration facts, changes, notices) is read and acknowledged in the console; the SDK covers the services that check a domain.';
+
     /**
      * @return array<string, string> `METHOD /path` => reason
      */
@@ -93,6 +97,31 @@ final class OutOfScope
             'POST /maintenances/{maintenance}/complete' => self::MAINTENANCE_WRITES,
             'POST /maintenances/{maintenance}/cancel' => self::MAINTENANCE_WRITES,
             'POST /maintenances/{maintenance}/extend' => self::MAINTENANCE_WRITES,
+
+            'GET /maintenance-windows' => self::RECURRING_MAINTENANCES,
+            'GET /recurring-maintenances' => self::RECURRING_MAINTENANCES,
+            'POST /recurring-maintenances' => self::RECURRING_MAINTENANCES,
+            'POST /recurring-maintenances/preview' => self::RECURRING_MAINTENANCES,
+            'GET /recurring-maintenances/{recurringMaintenance}' => self::RECURRING_MAINTENANCES,
+            'PUT /recurring-maintenances/{recurringMaintenance}' => self::RECURRING_MAINTENANCES,
+            'DELETE /recurring-maintenances/{recurringMaintenance}' => self::RECURRING_MAINTENANCES,
+            'POST /recurring-maintenances/{recurringMaintenance}/duplicate' => self::RECURRING_MAINTENANCES,
+            'POST /recurring-maintenances/{recurringMaintenance}/end-window' => self::RECURRING_MAINTENANCES,
+            'POST /recurring-maintenances/{recurringMaintenance}/extend-window' => self::RECURRING_MAINTENANCES,
+            'GET /recurring-maintenances/{recurringMaintenance}/history' => self::RECURRING_MAINTENANCES,
+            'GET /recurring-maintenances/{recurringMaintenance}/overrides' => self::RECURRING_MAINTENANCES,
+            'POST /recurring-maintenances/{recurringMaintenance}/overrides' => self::RECURRING_MAINTENANCES,
+            'DELETE /recurring-maintenances/{recurringMaintenance}/overrides/{override}' => self::RECURRING_MAINTENANCES,
+            'POST /recurring-maintenances/{recurringMaintenance}/pause' => self::RECURRING_MAINTENANCES,
+            'POST /recurring-maintenances/{recurringMaintenance}/resume' => self::RECURRING_MAINTENANCES,
+            'GET /recurring-maintenances/{recurringMaintenance}/windows' => self::RECURRING_MAINTENANCES,
+
+            'GET /domains' => self::DOMAIN_WATCHES,
+            'GET /domains/{watch}' => self::DOMAIN_WATCHES,
+            'POST /domains/{watch}/accept' => self::DOMAIN_WATCHES,
+            'GET /domains/{watch}/events' => self::DOMAIN_WATCHES,
+            'GET /domains/{watch}/notices' => self::DOMAIN_WATCHES,
+            'POST /domains/{watch}/refresh' => self::DOMAIN_WATCHES,
         ];
     }
 }

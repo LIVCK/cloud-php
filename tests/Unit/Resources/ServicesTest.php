@@ -634,6 +634,27 @@ describe('agent services', function (): void {
     });
 });
 
+describe('heartbeat services', function (): void {
+    it('reads the heartbeat block in a list and on a single service', function (): void {
+        [$client, $http] = fakeClient([
+            MockResponse::page([ServiceFixtures::heartbeatPayload(), ServiceFixtures::payload()]),
+            MockResponse::json(['data' => ServiceFixtures::heartbeatPayload()]),
+        ]);
+
+        $page = $client->services()->list();
+        $single = $client->services()->get(ServiceFixtures::HEARTBEAT_ID);
+
+        expect($page->items[0]->checkType)->toBe(CheckType::Heartbeat)
+            ->and($page->items[0]->heartbeat?->declared?->key)->toBe('export:nightly')
+            ->and($page->items[0]->hasTag('livck.app:shop'))->toBeTrue()
+            ->and($page->items[1]->heartbeat)->toBeNull()
+            ->and($single->heartbeat?->schedule->periodSeconds)->toBe(300)
+            ->and($single->heartbeat?->isDeclared())->toBeTrue();
+
+        $http->assertSent(fn(RecordedRequest $r): bool => $r->matches('GET', '/v1/services/' . ServiceFixtures::HEARTBEAT_ID));
+    });
+});
+
 describe('agentMetrics', function (): void {
     it('reads the latest figures, keyed like the metric catalog', function (): void {
         [$client, $http] = fakeClient([MockResponse::json(ServiceFixtures::agentMetrics())]);

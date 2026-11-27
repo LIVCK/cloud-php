@@ -10,6 +10,7 @@ namespace LIVCK\Cloud\Exceptions;
  * organization behind it is not available.
  *
  * A feature the plan does not include is also a 403, raised as the more specific
- * {@see FeatureNotAvailableException}.
+ * {@see FeatureNotAvailableException}; so is a token whose view is limited by access areas
+ * where the endpoint needs the whole organization ({@see RestrictedViewException}).
  */
 class PermissionDeniedException extends ApiException {}

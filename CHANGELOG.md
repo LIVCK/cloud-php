@@ -4,6 +4,27 @@ All notable changes to this package are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Heartbeat pings: `Ping\HeartbeatPing` sends start, success, fail and exit code signals to a
+  heartbeat's ping URL, with figures and the end of the job's log (`PingDetails`). It needs no
+  API token, makes one attempt with a timeout of three seconds and never throws; the outcome
+  comes back as a `PingResult`. `CloudClient::heartbeatPing()` builds one with the client's
+  logger and user agent.
+- `heartbeats()->declare()`: an application declares its heartbeats by app, environment and
+  key (`HeartbeatDeclaration`, `HeartbeatBuilder`, `HeartbeatSchedule`). LIVCK creates the
+  missing ones, aligns the others and never removes one. The `HeartbeatDeclarationResult`
+  holds every heartbeat with its ping URL as a `Support\Secret`, what was not created and why
+  (`notCreated`), and what LIVCK still holds that the declaration no longer names (`unlisted`).
+- `Service::$heartbeat`: a heartbeat's schedule, its last ping and what declares it; null for
+  every other service.
+- `RestrictedViewException`, a `PermissionDeniedException` for a token whose view is limited
+  by access areas, and `HeartbeatDeclarationConflictException` for a declaration that collided
+  with another one. `ConflictException::isRetryable()` says whether sending again helps.
+- `IncidentKind::Domain`.
+
 ## [1.2.0] - 2026-10-07
 
 ### Added

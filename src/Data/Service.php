@@ -19,7 +19,8 @@ use LIVCK\Cloud\Support\Field;
  * exists but is not monitored (`isConfigured` false, `settings` null) until it gets some; a
  * `manual` service has nothing to configure and is configured from the start, with
  * `settings` null. An `agent` service is a server that enrolled with an enrollment key;
- * `agent` describes it.
+ * `agent` describes it. A `heartbeat` service reports in by itself; `heartbeat` holds its schedule,
+ * its last ping and the application that declares it.
  */
 final readonly class Service
 {
@@ -36,6 +37,7 @@ final readonly class Service
      * @param ServiceAgent|null $agent the server behind an `agent` service; null for every other check type. It
      *                                 follows `$raw` so that constructor calls written for earlier versions
      *                                 keep working.
+     * @param ServiceHeartbeat|null $heartbeat the schedule of a `heartbeat` service; null for every other check type
      */
     public function __construct(
         public string $id,
@@ -61,6 +63,7 @@ final readonly class Service
         public ?ServiceSettings $settings,
         public array $raw,
         public ?ServiceAgent $agent = null,
+        public ?ServiceHeartbeat $heartbeat = null,
     ) {}
 
     /**
@@ -72,6 +75,7 @@ final readonly class Service
         $pausedReason = Field::nullableString($data, 'paused_reason');
         $settings = Field::nullableObject($data, 'settings');
         $agent = Field::nullableObject($data, 'agent');
+        $heartbeat = Field::nullableObject($data, 'heartbeat');
 
         return new self(
             Field::string($data, 'id'),
@@ -97,6 +101,7 @@ final readonly class Service
             $settings === null ? null : ServiceSettings::fromArray($settings),
             $data,
             $agent === null ? null : ServiceAgent::fromArray($agent),
+            $heartbeat === null ? null : ServiceHeartbeat::fromArray($heartbeat),
         );
     }
 
